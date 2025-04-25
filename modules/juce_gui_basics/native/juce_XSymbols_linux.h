@@ -501,6 +501,11 @@ public:
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XWarpPointer, xWarpPointer,
                                          (::Display*, ::Window, ::Window, int, int, unsigned int, unsigned int, int, int),
                                          void)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT(XSetTransientForHint, xSetTransientForHint,
+                                        (::Display*, ::Window, ::Window),
+                                        int)
+
    #if JUCE_USE_XCURSOR
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XcursorImageCreate, xcursorImageCreate,
                                          (int, int),

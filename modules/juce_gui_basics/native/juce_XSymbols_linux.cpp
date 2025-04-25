@@ -199,7 +199,8 @@ bool X11Symbols::loadAllSymbols()
                        makeSymbolBinding (xUnlockDisplay,              "XUnlockDisplay"),
                        makeSymbolBinding (xUnmapWindow,                "XUnmapWindow"),
                        makeSymbolBinding (xutf8TextListToTextProperty, "Xutf8TextListToTextProperty"),
-                       makeSymbolBinding (xWarpPointer,                "XWarpPointer")))
+                       makeSymbolBinding (xWarpPointer,                "XWarpPointer"),
+                       makeSymbolBinding (xSetTransientForHint,        "XSetTransientForHint")))
         return false;
 
    #if JUCE_USE_XCURSOR

@@ -665,6 +665,8 @@ void Component::toFront (bool shouldGrabKeyboardFocus)
     }
 }
 
+
+
 void Component::toBehind (Component* other)
 {
     if (other != nullptr && other != this)
@@ -769,6 +771,41 @@ void Component::setAlwaysOnTop (bool shouldStayOnTop)
 bool Component::isAlwaysOnTop() const noexcept
 {
     return flags.alwaysOnTopFlag;
+}
+
+bool Component::setTransientFor(Component* toBeOwner) const {
+    // this implementation is adapted from toBehind, because the two functions have some similarities (require similar safety checks, etc.)
+    if (toBeOwner != nullptr && toBeOwner != this)
+    {
+        // the two components must belong to the same parent..
+        //jassert (parentComponent == other->parentComponent); // Maybe there should be some constraints on the kind of relationship the two windows can have
+                                                               // like maybe
+
+        if (parentComponent != nullptr)
+        {
+            return false; // being owned and being a child are mutually exclusive. If this window is already a child, then fail here
+        }
+        else if (isOnDesktop()) // this component needs to be on the desktop
+        {
+            //jassert (toBeOwner->isOnDesktop()); // we don't need the owner to be on the desktop, because getPeer will find us a top level window
+
+            /*if (toBeOwner->isOnDesktop())
+            {*/
+                auto* us = getPeer();
+                auto* them = toBeOwner->getPeer();
+                //jassert (us != nullptr && them != nullptr); // asserting here would be excessive. Just early out and return false (indicating failure)
+
+                if (us != nullptr && them != nullptr)
+                    return us->setTransientFor (them);
+                else
+                {
+                    return false;
+                }
+            //}
+       }
+    }
+
+    return false;
 }
 
 //==============================================================================

@@ -203,6 +203,7 @@ public:
 
     void toFront  (::Window, bool makeActive) const;
     void toBehind (::Window, ::Window otherWindow) const;
+    bool setTransientFor (::Window toBeOwned, ::Window toBeOwner) const;
 
     bool isFocused (::Window) const;
     bool grabFocus (::Window) const;

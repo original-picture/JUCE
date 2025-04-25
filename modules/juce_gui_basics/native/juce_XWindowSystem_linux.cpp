@@ -2064,6 +2064,12 @@ void XWindowSystem::toBehind (::Window windowH, ::Window otherWindow) const
     X11Symbols::getInstance()->xRestackWindows (display, newStack, numElementsInArray (newStack));
 }
 
+bool XWindowSystem::setTransientFor (::Window toBeOwned, ::Window toBeOwner) const {
+    // xSetTransientForHint returns 0 on failure, 1 on success
+    return X11Symbols::getInstance()->xSetTransientForHint(display, toBeOwned, toBeOwner);
+}
+
+
 bool XWindowSystem::isFocused (::Window windowH) const
 {
     jassert (windowH != 0);
