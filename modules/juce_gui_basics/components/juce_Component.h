@@ -257,7 +257,13 @@ public:
     */
     bool isAlwaysOnTop() const noexcept;
 
-    bool setTransientFor(Component* toBeOwner) const;
+    bool setTransientFor(Component* toBeOwner, bool addToDesktopIfNotAlreadyAdded = false) const;
+
+    bool isTransient() const;
+
+    Component* getTransientForOwner() const;
+
+    void clearTransientFor() const;
 
     //==============================================================================
     /** Returns the x coordinate of the component's left edge.
