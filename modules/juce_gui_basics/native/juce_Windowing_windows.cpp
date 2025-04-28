@@ -1807,9 +1807,9 @@ public:
         return true;
     }
 
-    bool setTransientFor(Component* toBeOwner)
+    bool setTransientFor(ComponentPeer* toBeOwner)
     {
-        if (auto* otherPeer = dynamic_cast<LinuxComponentPeer*> (toBeOwner))
+        if (auto* otherPeer = dynamic_cast<HWNDComponentPeer*> (toBeOwner))
         {
             /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
                 return;*/
@@ -1820,7 +1820,7 @@ public:
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415
             /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
-            if(  !SetWindowLongPtr(reinterpret_cast<HWND>(to_be_owned.getWindowHandle()), GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(to_be_owner.getWindowHandle()))
+            if(  !SetWindowLongPtr(this->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(otherPeer->hwnd))
                  && GetLastError()) { // failure is indicated by SetWindowLongPtr() returning null AND GetLastError() returning nonzero  https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=If%20the%20previous,that%20is%20nonzero.
                 return false;
             }

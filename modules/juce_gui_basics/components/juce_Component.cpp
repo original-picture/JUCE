@@ -773,7 +773,7 @@ bool Component::isAlwaysOnTop() const noexcept
     return flags.alwaysOnTopFlag;
 }
 
-bool Component::setTransientFor(Component* toBeOwner) const {
+bool Component::setTransientFor(Component* toBeOwner, bool addToDesktopIfNotAlreadyAdded) const {
     // this implementation is adapted from toBehind, because the two functions have some similarities (require similar safety checks, etc.)
     if (toBeOwner != nullptr && toBeOwner != this)
     {
