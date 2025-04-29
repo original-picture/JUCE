@@ -337,7 +337,11 @@ public:
     */
     virtual bool setAlwaysOnTop (bool alwaysOnTop) = 0;
 
-    inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; };
+    inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; }
+
+    /*virtual bool addChildPeer(ComponentPeer* child);
+
+    ComponentPeer* getParentPeer() const;*/
 
     /** Brings the window to the top, optionally also giving it keyboard focus. */
     virtual void toFront (bool takeKeyboardFocus) = 0;
