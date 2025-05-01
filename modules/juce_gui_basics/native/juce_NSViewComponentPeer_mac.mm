@@ -608,16 +608,16 @@ public:
         return true;
     }
 
-    bool setTransientFor (ComponentPeer* toBeOwner) {
+    bool setTransientFor (ComponentPeer* toBeOwner) override {
         if (auto* otherPeer = dynamic_cast<NSViewComponentPeer*> (toBeOwner))
         {
-            [otherPeer.window addChildWindow:window];
+            [otherPeer->window addChildWindow:this->window ordered:NSWindowAbove];
         }
         else
         {
             jassertfalse; // wrong type of window?
         }
-    };
+    }
 
 
     void toFront (bool makeActiveWindow) override

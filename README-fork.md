@@ -13,7 +13,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] Basic support for transient windows on all platforms
   - [x] windows
   - [x] linux/X11
-  - [ ] macOS
+  - [x] macOS
 - [ ] modify existing JUCE functionality to reflect the fact that transient owner/owned relationships and JUCE parent/child relationships are mutually exclusive
   - [ ] terminate any existing parent/child relationship when making a window transient for another window
   - [ ] terminate any existing transient for relationship when making a window the child of another window
@@ -43,3 +43,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     Note that only minimization has this effect. Simply focusing another window doesn't change how the window(s) appear on the taskbar
   * this makes selecting a window from the taskbar slightly annoying, because two clicks are required to open an application that has owned windows
     (one click on the application icon, then another to select which window, even though clicking any window will have the same effect, because opening an owned window opens its owner window and vice versa)
+- [ ] minimizing the child window on macOS minimizes the parent window too. 
+      The parent window then can't be maximized by clicking its icon in the dock,
+      the only way to bring it back is to click the icon of the minimized child window
+  * this might just be how child windows work on macOS
+    * could potentially be circumvented by unparenting the child window when its minimized and then reparenting it when it's maximized? 
+    * idk seems convoluted and fragile 
