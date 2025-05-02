@@ -339,20 +339,46 @@ public:
 
     inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; }
 
-    /*virtual bool addChildPeer(ComponentPeer* child);
+   /*     int getNumChildPeers() const noexcept;
 
-    ComponentPeer* getParentPeer() const;*/
 
-    /** Brings the window to the top, optionally also giving it keyboard focus. */
-    virtual void toFront (bool takeKeyboardFocus) = 0;
+        ComponentPeer* getChildPeer (int index) const noexcept;
 
-    /** Moves the window to be just behind another one. */
-    virtual void toBehind (ComponentPeer* other) = 0;
 
-    /** Called when the window is brought to the front, either by the OS or by a call
-        to toFront().
-    */
-    void handleBroughtToFront();
+        int getIndexOfChildPeer(const ComponentPeer* child) const noexcept;
+
+
+        const Array<ComponentPeer*>& getChildren() const noexcept { return childPeerList; }
+
+        Component* findChildWithID (uint32 componentID) const noexcept;
+
+        virtual bool addChildPeer(ComponentPeer* child);
+
+      void removeChildComponent (Component* childToRemove);
+
+      Component* removeChildPeer (int childIndexToRemove);
+
+
+      void removeAllChildren();
+
+      ComponentPeer* getParentPeer() const noexcept;
+
+      Component* getTopLevelPeer() const noexcept;
+
+      bool isParentOf (const ComponentPeer* possibleChild) const noexcept;*/
+
+
+
+        /** Brings the window to the top, optionally also giving it keyboard focus. */
+        virtual void toFront(bool takeKeyboardFocus) = 0;
+
+        /** Moves the window to be just behind another one. */
+        virtual void toBehind(ComponentPeer* other) = 0;
+
+        /** Called when the window is brought to the front, either by the OS or by a call
+            to toFront().
+        */
+        void handleBroughtToFront();
 
     //==============================================================================
     /** True if the window has the keyboard focus. */
@@ -597,8 +623,11 @@ protected:
     ListenerList<ScaleFactorListener> scaleFactorListeners;
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
+    ComponentPeer* parentPeer;
+    Array<ComponentPeer*> childPeerList;
 
-private:
+
+    private:
     //==============================================================================
     virtual void appStyleChanged() {}
 

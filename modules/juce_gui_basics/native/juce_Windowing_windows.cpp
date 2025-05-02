@@ -1816,6 +1816,13 @@ public:
 
             //setMinimised (false);
 
+            auto existingWindowFlags = GetWindowLongPtr(this->hwnd, GWL_EXSTYLE);
+            existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
+            SetWindowLongPtr(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+
+            styleFlags = styleFlags & ~appearsOnTaskbar; // keep track of this on the juce side of things too
+
+
             SetLastError(0); /// windows docs say to do SetLastError(0) before calling SetWindowLongPtr
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415
