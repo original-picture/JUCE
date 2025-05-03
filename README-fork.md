@@ -21,7 +21,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     - [ ] `toBehind` does nothing if this peer is a child and `ComponentPeer other` isn't a sibling
       * or should I instead find the lowest common ancestor and then call `toBehind` on the children of the LCA that are ancestors of the two
         * sounds like a pain, I'll probably just not
-- [ ] test for transient window cycles?
+- [ ] test for parent/child window cycles in `addChildPeer`?
+  * `Component::addChildComponent` only tests to see if the child-to-be is equal to the parent-to-be and if the 
 - [ ] maybe rename `setTransientFor` to `makeTransientFor`
 - [ ] automatically call `setAlwaysOnTop(false)` when adding a transient child 
 - [ ] figure out what should happen when calling `SetAlwaysOnTop(true)` on a peer that has children. Should the children return 
@@ -31,11 +32,13 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       in order to achieve the desired behavior of keeping child peers above their parents, regardless of whether the parent is always on top,
       it may be necessary for setAlwaysOnTop calls to propagate to all peers
 - [ ] Maybe check out `WS_EX_TOOLWINDOW` it might be useful
-- [ ] add a `peerChanged` callback to `Component`?
+- [ ] add callbacks to `Component` for when various changes to the component's peer occur? (children added/removed, etc.)
 - [ ] extract the array insertion from z-order code from `addChildComponent` and add it to a private static function template in `Component` that generically inserts into an array of any type
       so that the logic can be shared between `addChildComponent` and `addChildPeer`
   * do this for all complex operations that deal with component z-order (`toFront`, `toBack`, `toBehind`, etc.)
 - [ ] calling `toFront` on a child peer should call `toFront` on its parent too (and this continues recursively until a top level window is found)
+- [ ] when calling `addToDesktop` on a child component `C`, maybe get the peer of the component's former parent `P` and make `C` a child peer of `P`'s peer?
+  * basically maintaining the parent/child relationship, just instead of being between components, now the relationship is between peers 
 
 ## Bugs
 - [x] *indicates a fixed bug*  
