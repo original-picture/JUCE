@@ -24,8 +24,6 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] test for parent/child window cycles in `addChildPeer`?
   * `Component::addChildComponent` only tests to see if the child-to-be is equal to the parent-to-be and if the child-to-be is actually the parent of the parent-to-be, two special cases of cycles
   * could be done efficiently with floyd's two pointer algorithm
-- [ ] maybe rename `setTransientFor` to `makeTransientFor`
-- [ ] automatically call `setAlwaysOnTop(false)` when adding a transient child 
 - [ ] figure out what should happen when calling `SetAlwaysOnTop(true)` on a peer that has children. Should `SetAlwaysOnTop(true)` be called recursively on the children?
   * I think the answer is yes
 - [ ] figure out what should heppen when calling `SetAlwaysOnTop(true)` on a child peer when its parent isn't 
@@ -34,6 +32,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
        * I don't like this solution. It would be weird for an operation on a child to modify the child's parent
     2. unparent the child and then call `SetAlwaysOnTop(true)` on it
        * I think this is the way
+       * question: does the child get reparented to its former parent if `SetAlwaysOnTop(false)` is called later?
+         Or is their relationship terminated permanently
 - [ ] don't allow an always on top window to add a not always on top window as a child. The reverse situation is okay though
 - [ ] also obviously early out of all functions that take two `ComponentPeer`s if the two peers are the same
 - [ ] on windows, it seems that setting the owner window as `HWND_TOPMOST` will cause the owner window to stay over a non-topmost owned window. 
@@ -48,15 +48,21 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] when calling `addToDesktop` on a child component `C`, maybe get the peer of the component's former parent `P` and make `C` a child peer of `P`'s peer?
   * basically maintaining the parent/child relationship, just instead of being between components, now the relationship is between peers 
 - [ ] uh oh. I just remembered that `addToDesktop` takes in a `nativeWindowToAttachTo`. 
-      At least in the win32 implementation, `nativeWindowToAttachTo` is later referred to as parent window (which makes sense, because `nativeWindowToAttachTo` becomes a win32 parent window).
+      In the win32 implementation, `nativeWindowToAttachTo` is later referred to as parent window (which makes sense, because `nativeWindowToAttachTo` becomes a win32 parent window).
       `LinuxComponentPeer` has a `parentWindow` member too.
       This means that the parent/child nomenclature is already in use, so I need to find some other name for the hierarchical relationship I'm developing
-  * Note: the parent/child terminology is only used for private variables and functions, so changing their names might be possible. Parents are referred to in public documentation comments though...
-  * The whole `nativeWindowToAttachTo` system seems pretty "off the beaten path". Unlike something like child components, I don't think many people are using it, so maybe adding another idea (child peers) with a similar name won't be the end of the world, at least not for users of the library
+  * Note: the parent/child terminology is only used for private variables and functions, so changing their names to be less ambiguous might be possible. Parents are referred to in public documentation comments though...
+  * The whole `nativeWindowToAttachTo` system seems pretty "off the beaten path". Unlike something like child components, I don't think many people are using it (though I could be wrong), so maybe adding another idea (child peers) with a similar name won't be the end of the world, at least not for users of the library
     * and then again, it might even be possible to rename private variables and functions that refer to "parents" in "children", so this might not be an issue at all
   * I could call them owned windows like the windows api does. But I don't really like this term because I think using the term "owner" might make people who aren't familiar with win32 owned windows think that owner windows have something to do with C++ object ownership and lifetime, which is *not* the case
   * I could call them "top level parent/child windows", but that's still a little confusing
+  * also it's important to note that all the underlying windowing systems have two distinct hierarchical systems for organizing windows (e.g. parent/child and owner/owned windows in win32)
+    so I could sort of make an argument that this complexity is justified because it's just exposing complexity inherent to the underlying APIs, not inventing new complexity
+    * but then again, if child peers were added, JUCE would then have **three** distinct systems hierarchical systems for organizing GUI elements (child components, `addToDesktop`/`nativeWindowToAttachTo`, and child peers)
+      * buuuuuut on the other hand you could argue that it's not really that bad because, again, there probably aren't all that many people using `nativeWindowToAttachTo`, so it's more like 2.5 distinct systems
 - [ ] make `addChildPeer` fail if the peer has already been attached to a native parent via `addToDesktop`?
+- [ ] the `addToDesktop`/`nativeWindowToAttachTo` API seems kind of incomplete. Maybe give it some more utility functions
+  * there are seemingly no functions for checking if a peer has a parent window, reparenting a window, enumerating child windows, etc. 
 
 ## Bugs
 - [x] *indicates a fixed bug*  
