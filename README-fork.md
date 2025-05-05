@@ -77,6 +77,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] make sure child windows receive minimization and close notifications
   * this might just work automatically 
 
+- [ ] don't allow calling `toBehind` with an always on top window and a *not* always on top window
+ * copy component's behavior 
+
 
 ## Bugs
 - [x] *indicates a fixed bug*  
