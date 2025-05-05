@@ -26,7 +26,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * could be done efficiently with floyd's two pointer algorithm
 - [ ] figure out what should happen when calling `SetAlwaysOnTop(true)` on a peer that has children. Should `SetAlwaysOnTop(true)` be called recursively on the children?
   * I think the answer is yes
-- [ ] figure out what should heppen when calling `SetAlwaysOnTop(true)` on a child peer when its parent isn't 
+  - [ ] might need to define some kind of "hereditarily on top" concept (i.e., a window that is always on top but only because one of its ancestors is, and will cease to be on top if its on top ancestors are made not on top or are destroyed)
+    - [x] afaik there is no `isAlwaysOnTop` public member variable or function in `Component` or `ComponentPeer`, but if one ever gets added, should it return whether the window is hereditarily on top or inherently on top?
+     * I'd say it should return if either is true, but add an additional function called `isHereditarilyAlwaysOnTop`
+- [ ] figure out what should happen when calling `SetAlwaysOnTop(true)` on a child peer when its parent isn't 
   * two possibilites:
     1. call `SetAlwaysOnTop(true)` on all of the child's ancestors
        * I don't like this solution. It would be weird for an operation on a child to modify the child's parent
@@ -34,7 +37,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
        * I think this is the way
        * question: does the child get reparented to its former parent if `SetAlwaysOnTop(false)` is called later?
          Or is their relationship terminated permanently
-- [ ] don't allow an always on top window to add a not always on top window as a child. The reverse situation is okay though
+    3. or just let it be on top. I tested it on windows and yeah the behavior is kind of weird but if a user asks for that then they know what they're getting into
+- [ ] ~~don't allow an always on top window to add a not always on top window as a child. The reverse situation is okay though~~
+  * no just promote the child window to be transiently always on top 
 - [ ] also obviously early out of all functions that take two `ComponentPeer`s if the two peers are the same
 - [ ] on windows, it seems that setting the owner window as `HWND_TOPMOST` will cause the owner window to stay over a non-topmost owned window. 
       in order to achieve the desired behavior of keeping child peers above their parents, regardless of whether the parent is always on top,
@@ -44,7 +49,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] extract the array insertion from z-order code from `addChildComponent` and add it to a private static function template in `Component` that generically inserts into an array of any type
       so that the logic can be shared between `addChildComponent` and `addChildPeer`
   * do this for all complex operations that deal with component z-order (`toFront`, `toBack`, `toBehind`, etc.)
-- [ ] calling `toFront` on a child peer should call `toFront` on its parent too (and this continues recursively until a top level window is found)
+- [ ] ~~calling `toFront` on a child peer should call `toFront` on its parent too (and this continues recursively until a top level window is found)~~
+  * actually no, I think calling `toFront` on a child window should only re-order windows relative to their siblings
+  * or maybe add an optional `bool bringAncestorsToFrontToo` parameter
 - [ ] when calling `addToDesktop` on a child component `C`, maybe get the peer of the component's former parent `P` and make `C` a child peer of `P`'s peer?
   * basically maintaining the parent/child relationship, just instead of being between components, now the relationship is between peers 
 - [ ] uh oh. I just remembered that `addToDesktop` takes in a `nativeWindowToAttachTo`. 
@@ -63,6 +70,13 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] make `addChildPeer` fail if the peer has already been attached to a native parent via `addToDesktop`?
 - [ ] the `addToDesktop`/`nativeWindowToAttachTo` API seems kind of incomplete. Maybe give it some more utility functions
   * there are seemingly no functions for checking if a peer has a parent window, reparenting a window, enumerating child windows, etc. 
+- [ ] when a child's parent is deleted, have it get adopted by its grandparent?
+  * just mimic whatever component does
+  * hide window when its parent dies?
+  * also doesn't matter in practice because you really shouldn't close a window without closing its children
+- [ ] make sure child windows receive minimization and close notifications
+  * this might just work automatically 
+
 
 ## Bugs
 - [x] *indicates a fixed bug*  
