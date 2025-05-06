@@ -79,7 +79,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 
 - [ ] don't allow calling `toBehind` with an always on top window and a *not* always on top window
  * copy component's behavior 
-
+- [ ] add ComponentPeer::toBack() 
+  * use `SetWindowPos(..., HWND_BOTTOM)`, `XLowerWindow`, and `orderBack`
+- [ ] making a parent window invisible makes its children invisible (recursively)
 
 ## Bugs
 - [x] *indicates a fixed bug*  
@@ -110,3 +112,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * ~~tbh though might be a nonissue because maybe the differences between platforms will align with user expectations
     (e.g., Windows users expect an owned window to stay put when its owner is dragged and macOS users expect a child window to move with its parent)~~ 
   * **it seems this is unavoidable. See my note about minimizing child windows doing strange things on macOS**
+  [ ] in my test code (not in this repo), child windows are always stacked in the order they were added as children.
+      Clicking and dragging a window doesn't affect its z-order
+    * irritatingly, `orderFront` and `orderBack` seemingly have no effect on child windows
+    * I found a dumb hack though. If you remove the child window and then add it again it will show on top
+      * maybe this could be exploited by overriding `windowDidBecomeKey` in `NSWindowDelegate`
+    * handling more complex reordering operations like sending windows to the back or the middle would require removing and re-adding multiple (potentially all) child windows
+    * Maybe this isn't even a bug. Is this just how things work on macOS? Is this the behavior macOS users would expect?
