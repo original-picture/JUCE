@@ -125,3 +125,4 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     not just to fix this bug, but also because a child window really shouldn't outlive its parent.
     That would lead to a confusing user experience
     * no that's a bad idea. Just unparent child windows (at the native level) in the destructor
+    * 
