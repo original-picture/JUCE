@@ -172,6 +172,61 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
+bool ComponentPeer::isAlwaysOnTop() const noexcept
+{          // short circuit evaluation allows us to avoid calling isAncestrallyAlwaysOnTop() if we don't have to
+    return isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop();
+}
+
+bool ComponentPeer::isAncestrallyAlwaysOnTop() const noexcept
+{
+
+    if(topLevelParentPeer != nullptr)
+    {
+        topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAncestrallyAlwaysOnTop())
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
+{
+    return internalIsInherentlyAlwaysOnTop;
+}
+
+int ComponentPeer::getNumTopLevelChildPeers() const noexcept
+{
+    return topLevelChildPeerList.size();
+}
+
+bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
+{
+    jassert (this != &child); // adding a peer to itself!?
+
+    if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here
+    {
+        if(isAlwaysOnTop())
+        {
+
+        }
+        else
+        {
+            if(child.isAlwaysOnTop())
+            {
+                jassertfalse; // can't add an always on top child to a parent that isn't always on top (works on windows but breaks on macOS)
+            }
+            else
+            {
+
+            }
+        }
+    }
+
+
+}
+
+
 Component* ComponentPeer::getTargetForKeyPress()
 {
     auto* c = Component::getCurrentlyFocusedComponent();

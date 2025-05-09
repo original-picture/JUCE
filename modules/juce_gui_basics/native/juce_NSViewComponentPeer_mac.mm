@@ -602,7 +602,8 @@ public:
                                                                                         : NSFloatingWindowLevel)
                                           : NSNormalWindowLevel];
 
-            isAlwaysOnTop = alwaysOnTop;
+            internalIsInherentlyAlwaysOnTop = alwaysOnTop; // having two very similar members isn't great,
+            isAlwaysOnTop = alwaysOnTop;                   // but I don't want to do an invasive refactor without first discussing it with the maintainers
         }
 
         return true;

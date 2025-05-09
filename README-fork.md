@@ -30,7 +30,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     - [x] afaik there is no `isAlwaysOnTop` public member variable or function in `Component` or `ComponentPeer`, but if one ever gets added, should it return whether the window is hereditarily on top or inherently on top?
      * I'd say it should return if either is true, but add an additional function called `isHereditarilyAlwaysOnTop`
 - [ ] figure out what should happen when calling `SetAlwaysOnTop(true)` on a child peer when its parent isn't 
-  * two possibilites:
+  * possibilites:
     1. call `SetAlwaysOnTop(true)` on all of the child's ancestors
        * I don't like this solution. It would be weird for an operation on a child to modify the child's parent
     2. unparent the child and then call `SetAlwaysOnTop(true)` on it
@@ -38,6 +38,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
        * question: does the child get reparented to its former parent if `SetAlwaysOnTop(false)` is called later?
          Or is their relationship terminated permanently
     3. or just let it be on top. I tested it on windows and yeah the behavior is kind of weird but if a user asks for that then they know what they're getting into
+      * macos doesn't support this, so it's a no-go
 - [ ] ~~don't allow an always on top window to add a not always on top window as a child. The reverse situation is okay though~~
   * no just promote the child window to be transiently always on top 
 - [ ] also obviously early out of all functions that take two `ComponentPeer`s if the two peers are the same
@@ -124,3 +125,19 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * maybe I should make the parent-child relationship owning on the C++ side too, 
     not just to fix this bug, but also because a child window really shouldn't outlive its parent.
     That would lead to a confusing user experience
+
+# Changes to existing parts of JUCE
+* edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
+  because with the addition of parent/child peers, the usage of that term could be confusing 
+* 
+
+# Notes
+* what is `NSViewComponentPeer::wasAlwaysOnTop`?
+* should an always on top window be on top of all other peers or just its siblings?
+* sometimes JUCE internally destroys and recreates peers (see `Component::setAlwaysOnTop`). Will this break child peer functionality?
+
+# Things to ask the maintainers
+* I've added a protected member `internalIsInherentlyAlwaysOnTop` to `ComponentPeer`, 
+  but `NSViewComponentPeer` already has a private member `isAlwaysOnTop`. 
+  Having two similar members is kind of confusing. 
+  Can we refactor `NSViewComponentPeer` so that it uses the member variable it inherits from `ComponentPeer`?

@@ -337,31 +337,52 @@ public:
     */
     virtual bool setAlwaysOnTop (bool alwaysOnTop) = 0;
 
-    inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; }
+    /** Returns true if this peer is set to always stay in front of other windows on the desktop.
+        Equivalent to isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop()
+        @see setAlwaysOnTop, isAncestrallyAlwaysOnTop, isInherentlyAlwaysOnTop
+    */
+    bool isAlwaysOnTop() const noexcept;
 
-   /*     int getNumChildPeers() const noexcept;
+    /** Returns true if this peer has ancestors that are always on top.
+        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
+    */
+    bool isAncestrallyAlwaysOnTop() const noexcept;
+
+    /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
+        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, isAncestrallyAlwaysOnTop
+    */
+    bool isInherentlyAlwaysOnTop() const noexcept;
+
+        inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; }
+
+    int getNumTopLevelChildPeers() const noexcept;
 
 
-        ComponentPeer* getChildPeer (int index) const noexcept;
+    /** Returns the number of top level child peers that this peer is a parent of.
+        @see getChildren, getChildComponent, getIndexOfChildComponent
+    */
+    ComponentPeer* getTopLevelChildPeer (int index) const noexcept;
+/*
+
+        int getIndexOfTopLevelChildPeer(const ComponentPeer* child) const noexcept;
 
 
-        int getIndexOfChildPeer(const ComponentPeer* child) const noexcept;
-
-
-        const Array<ComponentPeer*>& getChildren() const noexcept { return childPeerList; }
+        const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return childPeerList; }
 
         Component* findChildWithID (uint32 componentID) const noexcept;
+*/
+        virtual bool addTopLevelChildPeer(ComponentPeer& child, int zOrder = -1);
+/*
+      void removeTopLevelChildPeer (ComponentPeer* childToRemove);
 
-        virtual bool addChildPeer(ComponentPeer* child);
-
-      void removeChildComponent (Component* childToRemove);
-
-      Component* removeChildPeer (int childIndexToRemove);
+      Component* removeTopLevelChildPeer (int childIndexToRemove);
 
 
-      void removeAllChildren();
+      void removeAllTopLevelChildren();
 
-      ComponentPeer* getParentPeer() const noexcept;
+      ComponentPeer* getTopLevelParentPeer() const noexcept;
 
       Component* getTopLevelPeer() const noexcept;
 
@@ -623,9 +644,11 @@ protected:
     ListenerList<ScaleFactorListener> scaleFactorListeners;
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
-    ComponentPeer* parentPeer;
-    Array<ComponentPeer*> childPeerList;
 
+    ComponentPeer* topLevelParentPeer;
+    Array<ComponentPeer*> topLevelChildPeerList;
+    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
+                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
     private:
     //==============================================================================

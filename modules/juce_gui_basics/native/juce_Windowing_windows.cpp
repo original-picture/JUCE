@@ -1804,6 +1804,8 @@ public:
         if (shadower != nullptr)
             handleBroughtToFront();
 
+        internalIsInherentlyAlwaysOnTop = alwaysOnTop;
+
         return true;
     }
 
