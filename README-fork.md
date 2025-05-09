@@ -120,11 +120,12 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       * maybe this could be exploited by overriding `windowDidBecomeKey` in `NSWindowDelegate`
     * handling more complex reordering operations like sending windows to the back or the middle would require removing and re-adding multiple (potentially all) child windows
     * Maybe this isn't even a bug. Is this just how things work on macOS? Is this the behavior macOS users would expect?
-- [ ] on windows, deleting an owned window deletes all its child windows (the actual native windows get deleted, but the juce objects don't get deleted)
+- [ ] on windows and macOS (but not X11/linux), deleting an owned window deletes all its child windows (the actual native windows get deleted, but the juce objects don't get deleted)
   * not shocking  considering the owner/owned nomenclature
   * maybe I should make the parent-child relationship owning on the C++ side too, 
     not just to fix this bug, but also because a child window really shouldn't outlive its parent.
     That would lead to a confusing user experience
+  * no that's a bad idea. Just unparent child windows (at the native level) in the destructor
 
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
