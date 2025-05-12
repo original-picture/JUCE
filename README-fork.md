@@ -83,6 +83,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] add ComponentPeer::toBack() 
   * use `SetWindowPos(..., HWND_BOTTOM)`, `XLowerWindow`, and `orderBack`
 - [ ] making a parent window invisible makes its children invisible (recursively)
+- [ ] make sure moving windows on macOS correctly updates child window positions on the JUCE side of things (`handleMovedOrResized` gets called, etc.)
 
 ## Bugs
 - [x] *indicates a fixed bug*  
@@ -142,3 +143,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   but `NSViewComponentPeer` already has a private member `isAlwaysOnTop`. 
   Having two similar members is kind of confusing. 
   Can we refactor `NSViewComponentPeer` so that it uses the member variable it inherits from `ComponentPeer`?
+* In general, should I prefer silent failure, `jassert`, or returning an error code?
+  * I see a mix of these in existing JUCE code
+* Should I refrain from adding functions that don't work on all platforms, or include them but return a code indicating success/failure?
+  * `setAlwaysOnTop` comes to mind (always fails and returns false on X11)

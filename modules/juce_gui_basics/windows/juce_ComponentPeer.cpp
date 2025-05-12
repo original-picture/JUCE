@@ -223,7 +223,7 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
         }
     }
 
-
+    return nullptr;
 }
 
 
