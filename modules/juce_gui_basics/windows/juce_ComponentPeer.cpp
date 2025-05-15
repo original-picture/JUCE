@@ -233,7 +233,7 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
     if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here?
     {
 
-        if(this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
+        if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
         {
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
         }
@@ -266,7 +266,7 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
 
         child.topLevelParentPeer = this;
 
-        addNativeTopLevelChildRelationship(&child);
+        addNativeTopLevelChildRelationship (&child);
     }
 
     return false;

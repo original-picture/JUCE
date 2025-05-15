@@ -620,6 +620,30 @@ public:
         }
     }
 
+    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        if (auto* childNSViewPeer = dynamic_cast<NSViewComponentPeer*> (child))
+        {
+            [this->window addChildWindow:childNSViewPeer->window ordered:NSWindowAbove];
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
+    }
+
+    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        if (auto* childNSViewPeer = dynamic_cast<NSViewComponentPeer*> (child))
+        {
+            [this->window removeChildWindow:childNSViewPeer->window];
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
+    }
+
 
     void toFront (bool makeActiveWindow) override
     {
@@ -1220,6 +1244,19 @@ public:
     {
         handleBroughtToFront();
         grabFocus();
+
+        if(topLevelParentPeer != nullptr)
+        {
+            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
+            {
+                parentNSViewPeer->removeNativeTopLevelChildRelationship (this); // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent,
+                parentNSViewPeer->addNativeTopLevelChildRelationship (this);    // regardless of which window is key.
+            }                                                                   // So even if the user clicks inside a window, if it was not the last child window to be added to its parent, it will draw underneath its siblings.
+            else                                                                // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
+            {                                                                   // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
+                jassertfalse; // parent peer was the wrong type? How does this even happen?
+            }
+        }
     }
 
     void resignKeyWindow()
