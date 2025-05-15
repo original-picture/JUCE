@@ -1846,7 +1846,52 @@ public:
 
     void addNativeTopLevelChildRelationship (ComponentPeer* child) override
     {
-        
+        if (auto* childHWNDPeer = dynamic_cast<HWNDComponentPeer*> (child))
+        {
+            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
+                return;*/                                    // is this some kind of null check?
+
+            //setMinimised (false);
+
+            auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+            existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW; // child window will show on the taskbar if we don't do this
+            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+
+            /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
+            /// source: https://stackoverflow.com/a/133415
+            /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
+            /// source: https://youtu.be/rusDBeXe_u8?t=3210
+            SetWindowLongPtr(childHWNDPeer->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(this->hwnd));
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
+    }
+
+    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        if (auto* childHWNDPeer = dynamic_cast<HWNDComponentPeer*> (child))
+        {
+            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
+                return;*/                                    // is this some kind of null check?
+
+            //setMinimised (false);
+
+            auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+            existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
+            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+
+            /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
+            /// source: https://stackoverflow.com/a/133415
+            /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
+            /// source: https://youtu.be/rusDBeXe_u8?t=3210
+            SetWindowLongPtr(childHWNDPeer->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetDesktopWindow()));
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
     }
 
 

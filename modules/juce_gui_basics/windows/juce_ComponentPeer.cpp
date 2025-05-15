@@ -232,41 +232,42 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
 
     if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here?
     {
-        if(isAlwaysOnTop())
-        {
-            if(child.isAlwaysOnTop())
-            {
 
-            }
-            else
+        if(this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
+        {
+            child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
+        }
+
+        if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
+            zOrder = topLevelChildPeerList.size();
+
+        if (child.isAlwaysOnTop())
+        {
+            while (zOrder < topLevelChildPeerList.size())
             {
-                child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
+                if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
+                    break;
+
+                ++zOrder;
             }
         }
         else
-        { // this peer is *not* always on top
-            if(child.isAlwaysOnTop())
+        {
+            while (zOrder > 0)
             {
-                jassertfalse; // can't add an always on top child to a parent that isn't always on top (works on windows but breaks on macOS)
-            }
-            else
-            {
+                if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
+                    break;
 
+                --zOrder;
             }
         }
+
+        topLevelChildPeerList.insert (zOrder, &child);
+
+        child.topLevelParentPeer = this;
+
+        addNativeTopLevelChildRelationship(&child);
     }
-
-    if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
-        zOrder = topLevelChildPeerList.size();
-
-    // Unlike with child components, all of a peer's children share its always on top status.
-    // So if a peer is always on top, then all of its children are always on top
-    // and if a peer is *not* always on top, then all of its children are *not* always on top.
-    // As a result, we don't need to do any insertion index adjustments like in addChildComponent
-
-    topLevelChildPeerList.insert (zOrder, &child);
-
-    child.topLevelParentPeer = this;
 
     return false;
 }

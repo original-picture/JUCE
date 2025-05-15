@@ -639,12 +639,12 @@ protected:
     /**
      * This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.
      */
-    virtual void addNativeTopLevelChildRelationship (ComponentPeer* child);
+    virtual void addNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
 
     /**
      * Undoes a native relationship created by addNativeTopLevelChildRelationship
      */
-    virtual void removeNativeTopLevelChildRelationship (ComponentPeer* child);
+    virtual void removeNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
 
 
     Component& component;
@@ -656,7 +656,7 @@ protected:
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
 
-    ComponentPeer* topLevelParentPeer;
+    ComponentPeer* topLevelParentPeer = nullptr;
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
                                                   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
