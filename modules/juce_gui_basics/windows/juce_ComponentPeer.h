@@ -636,6 +636,17 @@ protected:
     static void forceDisplayUpdate();
     void callVBlankListeners (double timestampSec);
 
+    /**
+     * This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.
+     */
+    virtual void addNativeTopLevelChildRelationship (ComponentPeer* child);
+
+    /**
+     * Undoes a native relationship created by addNativeTopLevelChildRelationship
+     */
+    virtual void removeNativeTopLevelChildRelationship (ComponentPeer* child);
+
+
     Component& component;
     const int styleFlags;
     Rectangle<int> lastNonFullscreenBounds;
@@ -650,7 +661,7 @@ protected:
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
                                                   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
-    private:
+private:
     //==============================================================================
     virtual void appStyleChanged() {}
 
@@ -674,6 +685,20 @@ protected:
 
     void globalFocusChanged (Component*) override;
     Component* getTargetForKeyPress();
+
+    /**
+     * Used to support ancestrally always on top peers.
+     * An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
+     * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
+     */
+    bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop);
+
+    /**
+     * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.
+     */
+    void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
+
+
 
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse = nullptr;

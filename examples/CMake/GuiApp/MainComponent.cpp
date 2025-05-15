@@ -1,5 +1,7 @@
 #include "MainComponent.h"
 
+class
+
 //==============================================================================
 MainComponent::MainComponent()
 {

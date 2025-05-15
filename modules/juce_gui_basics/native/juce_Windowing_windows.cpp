@@ -1844,6 +1844,12 @@ public:
         }
     }
 
+    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        
+    }
+
+
     void toFront (bool makeActive) override
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);

@@ -172,9 +172,35 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
+bool ComponentPeer::setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop)
+{
+    // this implementation is kind of hacky,
+    // but this is the best way I can think of doing this without making big changes to the existing implementation
+
+    bool wasInherentlyAlwaysOnTop = internalIsInherentlyAlwaysOnTop; // save this value, because setAlwaysOnTop will change it
+    bool success = setAlwaysOnTop(alwaysOnTop);
+    internalIsInherentlyAlwaysOnTop = wasInherentlyAlwaysOnTop; // restore previous value
+
+    return success;
+}
+
+void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop)
+{
+    setAlwaysOnTopWithoutSettingFlag (alwaysOnTop);
+
+    for(ComponentPeer* peer : topLevelChildPeerList)
+    {
+        peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
+    }
+
+    // there is no flag member variable for isAncestrallyAlwaysOnTop
+    // an always on top ancestor is checked for recursively each time, without any caching
+}
+
 bool ComponentPeer::isAlwaysOnTop() const noexcept
 {          // short circuit evaluation allows us to avoid calling isAncestrallyAlwaysOnTop() if we don't have to
     return isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop();
+                                        // indirect recursion (isAncestrallyAlwaysOnTop() can call isAlwaysOnTop())
 }
 
 bool ComponentPeer::isAncestrallyAlwaysOnTop() const noexcept
@@ -182,7 +208,7 @@ bool ComponentPeer::isAncestrallyAlwaysOnTop() const noexcept
 
     if(topLevelParentPeer != nullptr)
     {
-        topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAncestrallyAlwaysOnTop())
+        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAncestrallyAlwaysOnTop())
     }
     else
     {
@@ -204,14 +230,21 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
 {
     jassert (this != &child); // adding a peer to itself!?
 
-    if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here
+    if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here?
     {
         if(isAlwaysOnTop())
         {
+            if(child.isAlwaysOnTop())
+            {
 
+            }
+            else
+            {
+                child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
+            }
         }
         else
-        {
+        { // this peer is *not* always on top
             if(child.isAlwaysOnTop())
             {
                 jassertfalse; // can't add an always on top child to a parent that isn't always on top (works on windows but breaks on macOS)
@@ -223,7 +256,19 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
         }
     }
 
-    return nullptr;
+    if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
+        zOrder = topLevelChildPeerList.size();
+
+    // Unlike with child components, all of a peer's children share its always on top status.
+    // So if a peer is always on top, then all of its children are always on top
+    // and if a peer is *not* always on top, then all of its children are *not* always on top.
+    // As a result, we don't need to do any insertion index adjustments like in addChildComponent
+
+    topLevelChildPeerList.insert (zOrder, &child);
+
+    child.topLevelParentPeer = this;
+
+    return false;
 }
 
 
