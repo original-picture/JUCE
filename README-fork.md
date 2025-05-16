@@ -131,6 +131,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     That would lead to a confusing user experience
   * no that's a bad idea. Just unparent child windows (at the native level) in the destructor
 
+- [ ] on windows, minimizingi a parent window will minimize the windows children, but sometimes will not minimize the children of children
+  * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
+
+
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
   because with the addition of parent/child peers, the usage of that term could be confusing 

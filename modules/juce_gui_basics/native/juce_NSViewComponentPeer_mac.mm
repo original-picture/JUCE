@@ -594,7 +594,7 @@ public:
         return (getStyleFlags() & windowHasTitleBar) != 0;
     }
 
-    bool setAlwaysOnTop (bool alwaysOnTop) override
+    bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) override
     {
         if (! isSharedWindow)
         {
@@ -602,22 +602,10 @@ public:
                                                                                         : NSFloatingWindowLevel)
                                           : NSNormalWindowLevel];
 
-            internalIsInherentlyAlwaysOnTop = alwaysOnTop; // having two very similar members isn't great,
-            isAlwaysOnTop = alwaysOnTop;                   // but I don't want to do an invasive refactor without first discussing it with the maintainers
+            isAlwaysOnTop = alwaysOnTop;
         }
 
         return true;
-    }
-
-    bool setTransientFor (ComponentPeer* toBeOwner) override {
-        if (auto* otherPeer = dynamic_cast<NSViewComponentPeer*> (toBeOwner))
-        {
-            [otherPeer->window addChildWindow:this->window ordered:NSWindowAbove];
-        }
-        else
-        {
-            jassertfalse; // wrong type of window?
-        }
     }
 
     void addNativeTopLevelChildRelationship (ComponentPeer* child) override

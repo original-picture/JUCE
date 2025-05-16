@@ -1528,7 +1528,7 @@ public:
         return {};
     }
 
-    bool setAlwaysOnTop (bool /*alwaysOnTop*/) override
+    bool setAlwaysOnTopWithoutSettingFlag (bool /*alwaysOnTop*/) override
     {
         // TODO
         return false;

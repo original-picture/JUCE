@@ -335,7 +335,7 @@ public:
     /** Sets this window to either be always-on-top or normal.
         Some kinds of window might not be able to do this, so should return false.
     */
-    virtual bool setAlwaysOnTop (bool alwaysOnTop) = 0;
+    bool setAlwaysOnTop (bool alwaysOnTop);
 
     /** Returns true if this peer is set to always stay in front of other windows on the desktop.
         Equivalent to isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop()
@@ -355,11 +355,8 @@ public:
     */
     bool isInherentlyAlwaysOnTop() const noexcept;
 
-        inline virtual bool setTransientFor (ComponentPeer* toBeOwner) { return false; }
-
     int getNumTopLevelChildPeers() const noexcept;
-
-
+    
     /** Returns the number of top level child peers that this peer is a parent of.
         @see getChildren, getChildComponent, getIndexOfChildComponent
     */
@@ -691,7 +688,7 @@ private:
      * An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
      * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
      */
-    bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop);
+    virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
 
     /**
      * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.

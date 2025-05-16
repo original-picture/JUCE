@@ -1792,7 +1792,7 @@ public:
         return findPhysicalBorderSize().value_or (BorderSize<int>{}).multipliedBy (1.0 / scaleFactor);
     }
 
-    bool setAlwaysOnTop (bool alwaysOnTop) override
+    bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) override
     {
         const bool oldDeactivate = shouldDeactivateTitleBar;
         shouldDeactivateTitleBar = ((styleFlags & windowIsTemporary) == 0);
@@ -1804,44 +1804,7 @@ public:
         if (shadower != nullptr)
             handleBroughtToFront();
 
-        internalIsInherentlyAlwaysOnTop = alwaysOnTop;
-
         return true;
-    }
-
-    bool setTransientFor(ComponentPeer* toBeOwner)
-    {
-        if (auto* otherPeer = dynamic_cast<HWNDComponentPeer*> (toBeOwner))
-        {
-            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
-                return;*/                                    // is this some kind of null check?
-
-            //setMinimised (false);
-
-            auto existingWindowFlags = GetWindowLongPtr(this->hwnd, GWL_EXSTYLE);
-            existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
-            SetWindowLongPtr(this->hwnd, GWL_EXSTYLE, existingWindowFlags); // TODO: I think I can just use GetWindowLong instead of GetWindowLongPtr
-
-
-            SetLastError(0); /// windows docs say to do SetLastError(0) before calling SetWindowLongPtr
-            /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
-            /// source: https://stackoverflow.com/a/133415
-            /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
-            /// source: https://youtu.be/rusDBeXe_u8?t=3210
-            if(  !SetWindowLongPtr(this->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(otherPeer->hwnd))
-                 && GetLastError()) { // failure is indicated by SetWindowLongPtr() returning null AND GetLastError() returning nonzero  https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=If%20the%20previous,that%20is%20nonzero.
-                return false;
-            }
-            else { // success
-                return true;
-                // windows api docs say I should call SetWindowPos here to force the window to update any cached data it might have https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#:~:text=Certain%20window%20data%20is%20cached%2C%20so%20changes%20you%20make%20using%20SetWindowLongPtr%20will%20not%20take%20effect%20until%20you%20call%20the%20SetWindowPos%20function.
-                // but it seems to work fine without doing that
-            }
-        }
-        else
-        {
-            jassertfalse; // wrong type of window?
-        }
     }
 
     void addNativeTopLevelChildRelationship (ComponentPeer* child) override
@@ -1855,7 +1818,7 @@ public:
 
             auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
             existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW; // child window will show on the taskbar if we don't do this
-            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+            SetWindowLong(childHWNDPeer->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415
@@ -1880,7 +1843,7 @@ public:
 
             auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
             existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
-            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+            SetWindowLong(childHWNDPeer->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415

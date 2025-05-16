@@ -172,6 +172,30 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
+bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
+{
+    if (alwaysOnTop == internalIsInherentlyAlwaysOnTop)
+    {
+        return true;
+    }
+    else if (setAlwaysOnTopWithoutSettingFlag (alwaysOnTop))
+    {
+        internalIsInherentlyAlwaysOnTop = alwaysOnTop;
+
+        for (ComponentPeer* child : topLevelChildPeerList)
+        {
+            child->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop); // I guess technically I should be checking to see if all these recursive calls succeed
+        }                                                                     // but the only time setAlwaysOnTopWithoutSettingFlag returns false is on linux,
+                                                                              // where it always returns false, so in practice, checking the return value of just one call to setAlwaysOnTopWithoutSettingFlag succeeds is sufficient
+        return true;                                                          // though of course all of this could change in the future...
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/*
 bool ComponentPeer::setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop)
 {
     // this implementation is kind of hacky,
@@ -183,6 +207,7 @@ bool ComponentPeer::setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop)
 
     return success;
 }
+*/
 
 void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop)
 {

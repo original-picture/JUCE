@@ -336,22 +336,7 @@ public:
     }
 
     void setAlpha (float) override                                  {}
-    bool setAlwaysOnTop (bool) override                             { return false; }
-
-    bool setTransientFor (ComponentPeer* toBeOwner) override {
-        if (auto* otherPeer = dynamic_cast<LinuxComponentPeer*> (toBeOwner))
-        {
-            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
-                return;*/
-
-            //setMinimised (false);
-           return XWindowSystem::getInstance()->setTransientFor (windowH, otherPeer->windowH);
-        }
-        else
-        {
-            jassertfalse; // wrong type of window?
-        }
-    }
+    bool setAlwaysOnTopWithoutSettingFlag (bool) override           { return false; }
 
     void addNativeTopLevelChildRelationship (ComponentPeer* child) override
     {
