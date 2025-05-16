@@ -105,8 +105,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * ~~this might just be how child windows work on macOS~~
     * ~~could potentially be circumvented by unparenting the child window when its minimized and then reparenting it when it's maximized?~~ 
     * ~~idk seems convoluted and fragile~~
-    * **apparently this behavior is simply unavoidable**
-      * source: [this file from QT 4.8.6](https://github.com/Kitware/fletch/blob/70f4e025067453cbf2f40565c05d80c6263d64c8/Patches/Qt/4.8.6/gui/kernel/qwidget_mac.mm#L4) (ctrl+F for addChildWindow and read the relevant comment)
+    * ~~**apparently this behavior is simply unavoidable**~~
+      * ~~source: [this file from QT 4.8.6](https://github.com/Kitware/fletch/blob/70f4e025067453cbf2f40565c05d80c6263d64c8/Patches/Qt/4.8.6/gui/kernel/qwidget_mac.mm#L4) (ctrl+F for addChildWindow and read the relevant comment)~~
+        * never mind, I found a workaround!
 
 - [ ] not really even a bug, but moving the parent window on macOS moves the child window too
   * ~~this is seemingly just how things work on macOS~~
@@ -114,11 +115,13 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * ~~tbh though might be a nonissue because maybe the differences between platforms will align with user expectations
     (e.g., Windows users expect an owned window to stay put when its owner is dragged and macOS users expect a child window to move with its parent)~~ 
   * **it seems this is unavoidable. See my note about minimizing child windows doing strange things on macOS**
-- [ ] in my test code (not in this repo), child windows are always stacked in the order they were added as children.
-      Clicking and dragging a window doesn't affect its z-order
+  * child window positions are updated when the parent is dragged, so this probably won't cause any issues
+- [ ] on macOS, child windows are always stacked in the order they were added as children.
+    * Clicking and dragging a window doesn't affect its z-order
     * irritatingly, `orderFront` and `orderBack` seemingly have no effect on child windows
     * I found a dumb hack though. If you remove the child window and then add it again it will show on top
       * maybe this could be exploited by overriding `windowDidBecomeKey` in `NSWindowDelegate`
+        * yep, this fixed it
     * handling more complex reordering operations like sending windows to the back or the middle would require removing and re-adding multiple (potentially all) child windows
     * Maybe this isn't even a bug. Is this just how things work on macOS? Is this the behavior macOS users would expect?
 - [ ] on windows and macOS (but not X11/linux), deleting an owned window deletes all its child windows (the actual native windows get deleted, but the juce objects don't get deleted)
@@ -135,6 +138,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 
 # Notes
 * what is `NSViewComponentPeer::wasAlwaysOnTop`?
+  * I figured it out. It's used in workaround to prevent some bug from occurring when always on top windows are minimized
 * should an always on top window be on top of all other peers or just its siblings?
 * sometimes JUCE internally destroys and recreates peers (see `Component::setAlwaysOnTop`). Will this break child peer functionality?
 
