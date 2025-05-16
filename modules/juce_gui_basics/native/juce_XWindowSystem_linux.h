@@ -248,6 +248,7 @@ public:
     ::Display* getDisplay() const noexcept                            { return display; }
     const XWindowSystemUtilities::Atoms& getAtoms() const noexcept    { return atoms; }
     XWindowSystemUtilities::XSettings* getXSettings() const noexcept  { return xSettings.get(); }
+    ::Window getDefaultRootWindow() const; // can't be inline because it needs access to X11Symbols, which we don't have access to in this file
 
     bool isX11Available() const noexcept  { return xIsAvailable; }
 

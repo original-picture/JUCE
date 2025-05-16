@@ -2858,6 +2858,12 @@ String XWindowSystem::getTextFromClipboard() const
 }
 
 //==============================================================================
+::Window XWindowSystem::getDefaultRootWindow() const
+{
+    return X11Symbols::getInstance()->xDefaultRootWindow(display);
+}
+
+//==============================================================================
 ::Window XWindowSystem::findTopLevelWindowOf (::Window w) const
 {
     if (w == 0)

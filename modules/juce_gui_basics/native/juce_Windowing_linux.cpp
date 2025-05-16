@@ -353,6 +353,37 @@ public:
         }
     }
 
+    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        if (auto* childX11Peer = dynamic_cast<LinuxComponentPeer*> (child))
+        {
+            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
+                return;*/
+
+            //setMinimised (false);
+            XWindowSystem::getInstance()->setTransientFor (childX11Peer->windowH, this->windowH);
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
+    }
+
+    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    {
+        if (auto* childX11Peer = dynamic_cast<LinuxComponentPeer*> (child))
+        {
+            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
+                return;*/
+
+            //setMinimised (false);
+            XWindowSystem::getInstance()->setTransientFor (childX11Peer->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
+        }
+        else
+        {
+            jassertfalse; // wrong type of window?
+        }
+    }
 
     void textInputRequired (Point<int>, TextInputTarget&) override  {}
 
