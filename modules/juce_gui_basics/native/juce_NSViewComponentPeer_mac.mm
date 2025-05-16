@@ -1699,6 +1699,37 @@ public:
         return redirectKeyDown (ev);
     }
 
+    // I had to write this and didDeminiaturize because I needed access to topLevelParentPeer which is a protected member of ComponentPeer
+    void willMiniaturize()
+    {
+        if(topLevelParentPeer != nullptr)
+        {
+            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
+            {
+                parentNSViewPeer->removeNativeTopLevelChildRelationship (this); // for some reason, minimizing a child window minimizes its parent too,
+            }                                                                   // So as a workaround, we can unparent the window before it minimizes, and then reparent it when it gets restored
+            else
+            {
+                jassertfalse; // parent peer was the wrong type? How does this even happen?
+            }
+        }
+    }
+
+    void didDeminiaturize()
+    {
+        if(topLevelParentPeer != nullptr)
+        {
+            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
+            {
+                parentNSViewPeer->addNativeTopLevelChildRelationship (this);
+            }
+            else
+            {
+                jassertfalse; // parent peer was the wrong type? How does this even happen?
+            }
+        }
+    }
+
     //==============================================================================
     class KeyEventAttributes
     {
@@ -2291,8 +2322,10 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
                     // there is a bug when restoring minimised always on top windows so we need
                     // to remove this behaviour before minimising and restore it afterwards
                     p->setAlwaysOnTop (false);
-                    p->wasAlwaysOnTop = true;
+                    p->wasAlwaysOnTop = true;  // these lines could go in the newly created NSViewComponentPeer::didMiniaturize, but this isn't my code so I don't want to move it
                 }
+
+                p->willMiniaturize();
             }
         });
 
@@ -2302,6 +2335,8 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
             {
                 if (p->wasAlwaysOnTop)
                     p->setAlwaysOnTop (true);
+
+                p->didDeminiaturize();
 
                 p->redirectMovedOrResized();
             }
