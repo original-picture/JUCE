@@ -257,8 +257,6 @@ public:
     */
     bool isAlwaysOnTop() const noexcept;
 
-    bool setTransientFor(Component* toBeOwner, bool addToDesktopIfNotAlreadyAdded = false) const;
-
     bool isTransient() const;
 
     Component* getTransientForOwner() const;

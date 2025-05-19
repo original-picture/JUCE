@@ -50,6 +50,11 @@ ComponentPeer::ComponentPeer (Component& comp, int flags)
 
 ComponentPeer::~ComponentPeer()
 {
+    if(topLevelParentPeer != nullptr)
+        topLevelParentPeer->removeTopLevelChildPeer(this);
+
+    removeAllTopLevelChildren();
+
     auto& desktop = Desktop::getInstance();
     desktop.removeFocusChangeListener (this);
     desktop.peers.removeFirstMatchingValue (this);
@@ -213,10 +218,14 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
 {
     setAlwaysOnTopWithoutSettingFlag (alwaysOnTop);
 
-    for(ComponentPeer* peer : topLevelChildPeerList)
+    if(! this->isInherentlyAlwaysOnTop())
     {
-        peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
+        for(ComponentPeer* peer : topLevelChildPeerList)
+        {
+            peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
+        }
     }
+
 
     // there is no flag member variable for isAncestrallyAlwaysOnTop
     // an always on top ancestor is checked for recursively each time, without any caching
@@ -251,7 +260,7 @@ int ComponentPeer::getNumTopLevelChildPeers() const noexcept
     return topLevelChildPeerList.size();
 }
 
-bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
+bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 {
     jassert (this != &child); // adding a peer to itself!?
 
@@ -295,6 +304,34 @@ bool ComponentPeer::addTopLevelChildPeer(ComponentPeer& child, int zOrder)
     }
 
     return false;
+}
+
+void ComponentPeer::removeTopLevelChildPeer (ComponentPeer* childToRemove)
+{
+    removeTopLevelChildPeer(topLevelChildPeerList.indexOf(childToRemove));
+}
+
+ComponentPeer* ComponentPeer::removeTopLevelChildPeer (int childIndexToRemove)
+{
+    if (auto* child = topLevelChildPeerList [childIndexToRemove])
+    {
+        removeNativeTopLevelChildRelationship(child);
+
+        child->setAlwaysOnTopRecursivelyWithoutSettingFlag(false);
+        child->topLevelParentPeer = nullptr;
+
+        topLevelChildPeerList.remove(childIndexToRemove);
+
+        return child;
+    }
+
+    return nullptr;
+}
+
+void ComponentPeer::removeAllTopLevelChildren()
+{
+    while (! topLevelChildPeerList.isEmpty())
+        removeTopLevelChildPeer (topLevelChildPeerList.size() - 1);
 }
 
 

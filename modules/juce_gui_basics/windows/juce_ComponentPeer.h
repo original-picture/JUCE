@@ -356,7 +356,7 @@ public:
     bool isInherentlyAlwaysOnTop() const noexcept;
 
     int getNumTopLevelChildPeers() const noexcept;
-    
+
     /** Returns the number of top level child peers that this peer is a parent of.
         @see getChildren, getChildComponent, getIndexOfChildComponent
     */
@@ -370,15 +370,14 @@ public:
 
         Component* findChildWithID (uint32 componentID) const noexcept;
 */
-        virtual bool addTopLevelChildPeer(ComponentPeer& child, int zOrder = -1);
+    bool addTopLevelChildPeer (ComponentPeer& child, int zOrder = -1);
+
+    void removeTopLevelChildPeer (ComponentPeer* childToRemove);
+
+    ComponentPeer* removeTopLevelChildPeer (int childIndexToRemove);
+
+    void removeAllTopLevelChildren();
 /*
-      void removeTopLevelChildPeer (ComponentPeer* childToRemove);
-
-      Component* removeTopLevelChildPeer (int childIndexToRemove);
-
-
-      void removeAllTopLevelChildren();
-
       ComponentPeer* getTopLevelParentPeer() const noexcept;
 
       Component* getTopLevelPeer() const noexcept;
@@ -639,7 +638,7 @@ protected:
     virtual void addNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
 
     /**
-     * Undoes a native relationship created by addNativeTopLevelChildRelationship
+     * Undoes a native relationship created by addNativeTopLevelChildRelationship.
      */
     virtual void removeNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
 
@@ -652,11 +651,6 @@ protected:
     ListenerList<ScaleFactorListener> scaleFactorListeners;
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
-
-    ComponentPeer* topLevelParentPeer = nullptr;
-    Array<ComponentPeer*> topLevelChildPeerList;
-    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
 private:
     //==============================================================================
@@ -703,6 +697,11 @@ private:
     const uint32 uniqueID;
     uint64_t peerFrameNumber = 0;
     bool isWindowMinimised = false;
+
+    ComponentPeer* topLevelParentPeer = nullptr;
+    Array<ComponentPeer*> topLevelChildPeerList;
+    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
+                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComponentPeer)

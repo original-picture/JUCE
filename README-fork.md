@@ -84,6 +84,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * use `SetWindowPos(..., HWND_BOTTOM)`, `XLowerWindow`, and `orderBack`
 - [ ] making a parent window invisible makes its children invisible (recursively)
 - [ ] make sure moving windows on macOS correctly updates child window positions on the JUCE side of things (`handleMovedOrResized` gets called, etc.)
+- [ ] maybe add the inherent/ancestral concepts to minimization as well
+ 
 
 ## Bugs
 - [x] *indicates a fixed bug*  
@@ -133,6 +135,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 
 - [ ] on windows, minimizingi a parent window will minimize the windows children, but sometimes will not minimize the children of children
   * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
+- [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
+      all of the windows will get minimized (obviously), but they w
 
 
 # Changes to existing parts of JUCE
