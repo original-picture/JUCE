@@ -1465,6 +1465,13 @@ public:
 
     ~HWNDComponentPeer() override
     {
+        // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
+        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // so I'm not sure how else to do this
+        //conditionalClearNativeTopLeveLParent();
+
+        doTopLevelChildPeerCleanup();
+
         // Clean up that needs to happen on the calling thread
         suspendResumeRegistration = {};
 
@@ -1807,9 +1814,9 @@ public:
         return true;
     }
 
-    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    void setNativeTopLevelParent (ComponentPeer* parent) override
     {
-        if (auto* childHWNDPeer = dynamic_cast<HWNDComponentPeer*> (child))
+        if (auto* parentHWNDPeer = dynamic_cast<HWNDComponentPeer*> (parent))
         {
             /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
                 return;*/                                    // is this some kind of null check?
@@ -1818,13 +1825,13 @@ public:
 
             auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
             existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW; // child window will show on the taskbar if we don't do this
-            SetWindowLong(childHWNDPeer->hwnd, GWL_EXSTYLE, existingWindowFlags);
+            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415
             /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
             /// source: https://youtu.be/rusDBeXe_u8?t=3210
-            SetWindowLongPtr(childHWNDPeer->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(this->hwnd));
+            SetWindowLongPtr(this->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(parentHWNDPeer->hwnd));
         }
         else
         {
@@ -1832,31 +1839,31 @@ public:
         }
     }
 
-    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    void clearNativeTopLevelParent() override
     {
-        if (auto* childHWNDPeer = dynamic_cast<HWNDComponentPeer*> (child))
-        {
-            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
-                return;*/                                    // is this some kind of null check?
+        /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
+            return;*/                                    // is this some kind of null check?
 
-            //setMinimised (false);
+        //setMinimised (false);
 
-            auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
-            existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
-            SetWindowLong(childHWNDPeer->hwnd, GWL_EXSTYLE, existingWindowFlags);
+        auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+        existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
+        SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
-            /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
-            /// source: https://stackoverflow.com/a/133415
-            /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
-            /// source: https://youtu.be/rusDBeXe_u8?t=3210
-            SetWindowLongPtr(childHWNDPeer->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetDesktopWindow()));
-        }
-        else
-        {
-            jassertfalse; // wrong type of window?
-        }
+        /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
+        /// source: https://stackoverflow.com/a/133415
+        /// source: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowlongptra#return-value:~:text=Do%20not%20call%20SetWindowLongPtr%20with%20the%20GWLP_HWNDPARENT%20index%20to%20change%20the%20parent%20of%20a%20child%20window.%20Instead%2C%20use%20the%20SetParent%20function.
+        /// source: https://youtu.be/rusDBeXe_u8?t=3210
+        SetWindowLongPtr(this->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetDesktopWindow()));
     }
 
+    void conditionalClearNativeTopLeveLParent()
+    {
+        if (topLevelParentPeer != nullptr)
+        {
+            clearNativeTopLevelParent();
+        }
+    }
 
     void toFront (bool makeActive) override
     {

@@ -634,14 +634,19 @@ protected:
 
     /**
      * This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.
-     */
-    virtual void addNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
+    */
+    virtual void setNativeTopLevelParent (ComponentPeer* parent) = 0;
 
     /**
-     * Undoes a native relationship created by addNativeTopLevelChildRelationship.
-     */
-    virtual void removeNativeTopLevelChildRelationship (ComponentPeer* child) = 0;
+     * Undoes a native parent/child relationship created by setNativeTopLevelParent.
+    */
+    virtual void clearNativeTopLevelParent() = 0;
 
+    // called from derived classes
+    // we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
+    // and by the time we reach ~ComponentPeer it's already too late
+    // also it calls virtual functions and obviously those can't be called from the destructor of the base class
+    void doTopLevelChildPeerCleanup();
 
     Component& component;
     const int styleFlags;
@@ -651,6 +656,11 @@ protected:
     ListenerList<ScaleFactorListener> scaleFactorListeners;
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
+
+    ComponentPeer* topLevelParentPeer = nullptr;
+    Array<ComponentPeer*> topLevelChildPeerList;
+    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
+                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
 private:
     //==============================================================================
@@ -681,15 +691,23 @@ private:
      * Used to support ancestrally always on top peers.
      * An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
      * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
-     */
+    */
     virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
 
     /**
      * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.
-     */
+    */
     void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
 
+    /**
+     *
+     * @param childIndexToRemove    don't like that I have to do this,
+     *                              but clearNativeTopLevelParent is virtual,
+     *                              so we need to make sure we don't call it from ComponentPeer's destructor
+    */
+    ComponentPeer* internalRemoveTopLevelChildPeer (ComponentPeer* childToRemove, bool shouldCallClearNativeTopLevelParent);
 
+    ComponentPeer* internalRemoveTopLevelChildPeer (int childIndexToRemove, bool shouldCallClearNativeTopLevelParent);
 
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse = nullptr;
@@ -697,11 +715,6 @@ private:
     const uint32 uniqueID;
     uint64_t peerFrameNumber = 0;
     bool isWindowMinimised = false;
-
-    ComponentPeer* topLevelParentPeer = nullptr;
-    Array<ComponentPeer*> topLevelChildPeerList;
-    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComponentPeer)

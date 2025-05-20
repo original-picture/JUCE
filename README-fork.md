@@ -133,8 +133,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     That would lead to a confusing user experience
   * no that's a bad idea. Just unparent child windows (at the native level) in the destructor
 
-- [ ] on windows, minimizingi a parent window will minimize the windows children, but sometimes will not minimize the children of children
+- [ ] on windows, minimizing a parent window will minimize the windows children, but sometimes will not minimize the children of children
   * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
+  * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
 - [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
       all of the windows will get minimized (obviously), but they w
 

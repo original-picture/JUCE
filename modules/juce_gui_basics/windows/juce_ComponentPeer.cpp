@@ -50,10 +50,12 @@ ComponentPeer::ComponentPeer (Component& comp, int flags)
 
 ComponentPeer::~ComponentPeer()
 {
-    if(topLevelParentPeer != nullptr)
-        topLevelParentPeer->removeTopLevelChildPeer(this);
-
-    removeAllTopLevelChildren();
+   // if(topLevelParentPeer != nullptr)
+   //     topLevelParentPeer->internalRemoveTopLevelChildPeer(this, false);
+                                                                  // don't call clearNativeTopLevelParent
+                                                                  // (we can't call it here because it's virtual and we're currently in a destructor)
+                                                                  // clearNativeTopLevelParent will get called in the destructor of the derived class
+    //removeAllTopLevelChildren();
 
     auto& desktop = Desktop::getInstance();
     desktop.removeFocusChangeListener (this);
@@ -300,7 +302,7 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 
         child.topLevelParentPeer = this;
 
-        addNativeTopLevelChildRelationship (&child);
+        child.setNativeTopLevelParent (this);
     }
 
     return false;
@@ -308,24 +310,43 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 
 void ComponentPeer::removeTopLevelChildPeer (ComponentPeer* childToRemove)
 {
-    removeTopLevelChildPeer(topLevelChildPeerList.indexOf(childToRemove));
+    internalRemoveTopLevelChildPeer (childToRemove, true);
 }
 
 ComponentPeer* ComponentPeer::removeTopLevelChildPeer (int childIndexToRemove)
 {
+    return internalRemoveTopLevelChildPeer (childIndexToRemove, true);
+}
+
+ComponentPeer* ComponentPeer::internalRemoveTopLevelChildPeer (ComponentPeer* childToRemove, bool shouldCallClearNativeTopLevelParent)
+{
+    return internalRemoveTopLevelChildPeer(topLevelChildPeerList.indexOf(childToRemove), shouldCallClearNativeTopLevelParent);
+}
+
+ComponentPeer* ComponentPeer::internalRemoveTopLevelChildPeer (int childIndexToRemove, bool shouldCallClearNativeTopLevelParent)
+{
     if (auto* child = topLevelChildPeerList [childIndexToRemove])
     {
-        removeNativeTopLevelChildRelationship(child);
+        if (shouldCallClearNativeTopLevelParent)
+            child->clearNativeTopLevelParent();
 
         child->setAlwaysOnTopRecursivelyWithoutSettingFlag(false);
         child->topLevelParentPeer = nullptr;
 
-        topLevelChildPeerList.remove(childIndexToRemove);
+        topLevelChildPeerList.remove (childIndexToRemove);
 
         return child;
     }
 
     return nullptr;
+}
+
+void ComponentPeer::doTopLevelChildPeerCleanup()
+{
+    removeAllTopLevelChildren();
+
+    if (topLevelParentPeer)
+        topLevelParentPeer->removeTopLevelChildPeer(this);
 }
 
 void ComponentPeer::removeAllTopLevelChildren()
