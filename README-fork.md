@@ -138,6 +138,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
 - [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
       all of the windows will get minimized (obviously), but they w
+- [ ] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  
+      interestingly, making a window always on top only affects the window and its owned windows
 
 
 # Changes to existing parts of JUCE
