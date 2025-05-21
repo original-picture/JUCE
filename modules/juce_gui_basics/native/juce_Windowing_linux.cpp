@@ -75,6 +75,11 @@ public:
         // it's dangerous to delete a window on a thread other than the message thread.
         JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
 
+        // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
+        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // so I'm not sure how else to do this
+        doTopLevelChildPeerCleanup();
+
         auto* instance = XWindowSystem::getInstance();
 
         repainter = nullptr;
@@ -338,15 +343,20 @@ public:
     void setAlpha (float) override                                  {}
     bool setAlwaysOnTopWithoutSettingFlag (bool) override           { return false; }
 
-    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    void setNativeTopLevelParent (ComponentPeer* parent) override
     {
-        if (auto* childX11Peer = dynamic_cast<LinuxComponentPeer*> (child))
+        if (auto* parentX11Peer = dynamic_cast<LinuxComponentPeer*> (parent))
         {
             /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
                 return;*/
 
             //setMinimised (false);
-            XWindowSystem::getInstance()->setTransientFor (childX11Peer->windowH, this->windowH);
+            XWindowSystem::getInstance()->setTransientFor (this->windowH, parentX11Peer->windowH);
+
+            auto hint = XWindowSystemUtilities::Atoms::getIfExists (XWindowSystem::getInstance()->getDisplay(), "_NET_WM_STATE_SKIP_TASKBAR");
+
+            XWindowSystem::getInstance()->xchangeProperty (windowH, XWindowSystem::getInstance()->getAtoms().windowState, XA_ATOM, 32, &hint, 1);
+
         }
         else
         {
@@ -354,20 +364,9 @@ public:
         }
     }
 
-    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    void clearNativeTopLevelParent() override
     {
-        if (auto* childX11Peer = dynamic_cast<LinuxComponentPeer*> (child))
-        {
-            /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
-                return;*/
-
-            //setMinimised (false);
-            XWindowSystem::getInstance()->setTransientFor (childX11Peer->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
-        }
-        else
-        {
-            jassertfalse; // wrong type of window?
-        }
+        XWindowSystem::getInstance()->setTransientFor (this->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
     }
 
     void textInputRequired (Point<int>, TextInputTarget&) override  {}

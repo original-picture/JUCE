@@ -85,6 +85,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] making a parent window invisible makes its children invisible (recursively)
 - [ ] make sure moving windows on macOS correctly updates child window positions on the JUCE side of things (`handleMovedOrResized` gets called, etc.)
 - [ ] maybe add the inherent/ancestral concepts to minimization as well
+- [ ] ugh. `ComponentPeer::styleFlags` is const. Which means that `windowAppearsOnTaskbar` is const,
+      which means that I can't change it without creating a new object. On windows and macOS, owned/child windows don't show up on the taskbar,
+      so right now the value of `windowAppearsOnTaskbar` is inconsistent with the actual state of the window, and there isn't a straightforward way to fix this
+  * could just make StyleFlags not const?
  
 
 ## Bugs
