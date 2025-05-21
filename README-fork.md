@@ -140,6 +140,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       all of the windows will get minimized (obviously), but they w
 - [ ] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  
       interestingly, making a window always on top only affects the window and its owned windows
+- [ ] on macOS, if both the parent and the child window are made always on top, and then the child window is made *not* always on top, 
+      the parent window will move on top of the child until the child loses its key status and then regains, which refreshes the z-order
+      and puts the child on top again, OR the child is made always on top again (potentially without losing and regaining its key status)
+  * I think the fix for the windows bug above will fix this 
 
 
 # Changes to existing parts of JUCE

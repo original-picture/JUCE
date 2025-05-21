@@ -1468,8 +1468,6 @@ public:
         // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
         // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
         // so I'm not sure how else to do this
-        //conditionalClearNativeTopLeveLParent();
-
         doTopLevelChildPeerCleanup();
 
         // Clean up that needs to happen on the calling thread

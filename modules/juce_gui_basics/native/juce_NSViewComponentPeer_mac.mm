@@ -310,6 +310,11 @@ public:
 
     ~NSViewComponentPeer() override
     {
+        // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
+        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // so I'm not sure how else to do this
+        doTopLevelChildPeerCleanup();
+
         scopedObservers.clear();
 
         setOwner (view, nullptr);
@@ -608,11 +613,11 @@ public:
         return true;
     }
 
-    void addNativeTopLevelChildRelationship (ComponentPeer* child) override
+    void setNativeTopLevelParent (ComponentPeer* parent) override
     {
-        if (auto* childNSViewPeer = dynamic_cast<NSViewComponentPeer*> (child))
+        if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (parent))
         {
-            [this->window addChildWindow:childNSViewPeer->window ordered:NSWindowAbove];
+            [parentNSViewPeer->window addChildWindow:this->window ordered:NSWindowAbove];
         }
         else
         {
@@ -620,11 +625,11 @@ public:
         }
     }
 
-    void removeNativeTopLevelChildRelationship (ComponentPeer* child) override
+    virtual void clearNativeTopLevelParent() override
     {
-        if (auto* childNSViewPeer = dynamic_cast<NSViewComponentPeer*> (child))
+        if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
         {
-            [this->window removeChildWindow:childNSViewPeer->window];
+            [parentNSViewPeer->window removeChildWindow:this->window];
         }
         else
         {
@@ -1237,11 +1242,11 @@ public:
         {
             if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
             {
-                parentNSViewPeer->removeNativeTopLevelChildRelationship (this); // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent,
-                parentNSViewPeer->addNativeTopLevelChildRelationship (this);    // regardless of which window is key.
-            }                                                                   // So even if the user clicks inside a window, if it was not the last child window to be added to its parent, it will draw underneath its siblings.
-            else                                                                // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
-            {                                                                   // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
+                clearNativeTopLevelParent();                // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent,
+                setNativeTopLevelParent (parentNSViewPeer); // regardless of which window is key.
+            }                                               // So even if the user clicks inside a window, if it was not the last child window to be added to its parent, it will draw underneath its siblings.
+            else                                            // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
+            {                                               // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
                 jassertfalse; // parent peer was the wrong type? How does this even happen?
             }
         }
@@ -1694,8 +1699,8 @@ public:
         {
             if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
             {
-                parentNSViewPeer->removeNativeTopLevelChildRelationship (this); // for some reason, minimizing a child window minimizes its parent too,
-            }                                                                   // So as a workaround, we can unparent the window before it minimizes, and then reparent it when it gets restored
+                clearNativeTopLevelParent(); // for some reason, minimizing a child window minimizes its parent too,
+            }                                // So as a workaround, we can unparent the window before it minimizes, and then reparent it when it gets restored
             else
             {
                 jassertfalse; // parent peer was the wrong type? How does this even happen?
@@ -1709,7 +1714,7 @@ public:
         {
             if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
             {
-                parentNSViewPeer->addNativeTopLevelChildRelationship (this);
+                setNativeTopLevelParent (parentNSViewPeer);
             }
             else
             {
