@@ -340,8 +340,11 @@ public:
         return currentScaleFactor;
     }
 
-    void setAlpha (float) override                                  {}
-    bool setAlwaysOnTopWithoutSettingFlag (bool) override           { return false; }
+    void setAlpha (float) override {}
+
+    bool setAlwaysOnTopWithoutSettingFlag (bool shouldBeAlwaysOnTop) override {
+        return XWindowSystem::getInstance()->setAlwaysOnTop(this->windowH, shouldBeAlwaysOnTop);
+    }
 
     void setNativeTopLevelParent (ComponentPeer* parent) override
     {

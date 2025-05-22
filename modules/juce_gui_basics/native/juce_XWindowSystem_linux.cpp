@@ -114,6 +114,7 @@ XWindowSystemUtilities::Atoms::Atoms (::Display* display)
     windowState                  = getIfExists (display, "_NET_WM_STATE");
     windowStateHidden            = getIfExists (display, "_NET_WM_STATE_HIDDEN");
     windowStateSkipTaskbar       = getIfExists (display, "_NET_WM_STATE_SKIP_TASKBAR");
+    windowStateAbove             = getIfExists (display, "_NET_WM_STATE_ABOVE");
 
     XdndAware                    = getCreating (display, "XdndAware");
     XdndEnter                    = getCreating (display, "XdndEnter");
@@ -2065,9 +2066,36 @@ void XWindowSystem::toBehind (::Window windowH, ::Window otherWindow) const
     X11Symbols::getInstance()->xRestackWindows (display, newStack, numElementsInArray (newStack));
 }
 
-bool XWindowSystem::setAlwaysOnTop (::Window, bool shouldBeAlwaysOnTop)
+bool XWindowSystem::setAlwaysOnTop (::Window windowH, bool shouldBeAlwaysOnTop)
 {
+    jassert (windowH != 0);
 
+    if (atoms.windowStateAbove)
+    {
+        auto root = X11Symbols::getInstance()->xRootWindow (display, X11Symbols::getInstance()->xDefaultScreen (display));
+
+        XClientMessageEvent clientMsg;
+        clientMsg.display = display;
+        clientMsg.window = windowH;
+        clientMsg.type = ClientMessage;
+        clientMsg.format = 32;
+        clientMsg.message_type = atoms.windowState;
+        clientMsg.data.l[0] = shouldBeAlwaysOnTop;
+        clientMsg.data.l[1] = (long) atoms.windowStateAbove;
+        clientMsg.data.l[2] = 0; // must be zero, because we're only setting one property
+        clientMsg.data.l[3] = 1; // source is normal application
+
+        XWindowSystemUtilities::ScopedXLock xLock;
+        X11Symbols::getInstance()->xSendEvent (display,
+                                               root,
+                                               false,
+                                               SubstructureRedirectMask | SubstructureNotifyMask,
+                                               (XEvent*) &clientMsg);
+
+        return true;
+    }
+
+    return false;
 }
 
 bool XWindowSystem::setTransientFor (::Window toBeOwned, ::Window toBeOwner) const {
@@ -2089,19 +2117,17 @@ void XWindowSystem::setAppearsOnTaskbar (::Window windowH, bool shouldAppearOnTa
         clientMsg.type = ClientMessage;
         clientMsg.format = 32;
         clientMsg.message_type = atoms.windowState;
-        clientMsg.data.l[0] = !shouldAppearOnTaskbar;  // Remove
+        clientMsg.data.l[0] = !shouldAppearOnTaskbar;  // negate shouldAppearOnTaskbar, because the property we're setting is whether we should SKIP the taskbar
         clientMsg.data.l[1] = (long) atoms.windowStateSkipTaskbar;
-        clientMsg.data.l[2] = 0; // not sure what l[2] and l[3] do in this case tbqh
-        clientMsg.data.l[3] = 0;
+        clientMsg.data.l[2] = 0; // must be zero, because we're only setting one property
+        clientMsg.data.l[3] = 1; // source is normal application
 
         XWindowSystemUtilities::ScopedXLock xLock;
-        auto ret = X11Symbols::getInstance()->xSendEvent (display,
-                                                          root,
-                                                          false,
-                                                          SubstructureRedirectMask | SubstructureNotifyMask,
-                                                          (XEvent*) &clientMsg);
-
-        jassert(ret);
+        X11Symbols::getInstance()->xSendEvent (display,
+                                               root,
+                                               false,
+                                               SubstructureRedirectMask | SubstructureNotifyMask,
+                                               (XEvent*) &clientMsg);
     }
 }
 
