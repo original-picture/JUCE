@@ -2069,6 +2069,35 @@ bool XWindowSystem::setTransientFor (::Window toBeOwned, ::Window toBeOwner) con
     return X11Symbols::getInstance()->xSetTransientForHint(display, toBeOwned, toBeOwner);
 }
 
+void XWindowSystem::setAppearsOnTaskbar (::Window windowH, bool shouldAppearOnTaskbar) const
+{
+    jassert (windowH != 0);
+
+    Atom taskbarAtom = XWindowSystemUtilities::Atoms::getIfExists (display, "_NET_WM_STATE_SKIP_TASKBAR");
+
+    if (taskbarAtom != None)
+    {
+        auto root = X11Symbols::getInstance()->xRootWindow (display, X11Symbols::getInstance()->xDefaultScreen (display));
+
+        XClientMessageEvent clientMsg;
+        clientMsg.display = display;
+        clientMsg.window = windowH;
+        clientMsg.type = ClientMessage;
+        clientMsg.format = 32;
+        clientMsg.message_type = atoms.windowState;
+        clientMsg.data.l[0] = !shouldAppearOnTaskbar;  // Remove
+        clientMsg.data.l[1] = (long) taskbarAtom;
+        clientMsg.data.l[2] = 0;
+        clientMsg.data.l[3] = 0;  // Normal Source
+
+        XWindowSystemUtilities::ScopedXLock xLock;
+        auto ret = X11Symbols::getInstance()->xSendEvent (display, root, false,
+                                               SubstructureRedirectMask | SubstructureNotifyMask,
+                                               (XEvent*) &clientMsg);
+
+        jassert(ret);
+    }
+}
 
 bool XWindowSystem::isFocused (::Window windowH) const
 {

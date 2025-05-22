@@ -353,10 +353,10 @@ public:
             //setMinimised (false);
             XWindowSystem::getInstance()->setTransientFor (this->windowH, parentX11Peer->windowH);
 
-            auto hint = XWindowSystemUtilities::Atoms::getIfExists (XWindowSystem::getInstance()->getDisplay(), "_NET_WM_STATE_SKIP_TASKBAR");
+            XWindowSystem::getInstance()->setAppearsOnTaskbar(this->windowH, false);
 
-            XWindowSystem::getInstance()->xchangeProperty (windowH, XWindowSystem::getInstance()->getAtoms().windowState, XA_ATOM, 32, &hint, 1);
-
+            XWindowSystem::getInstance()->toFront(parentX11Peer->windowH, true);
+            XWindowSystem::getInstance()->toFront(this->windowH,          true);
         }
         else
         {
@@ -367,6 +367,8 @@ public:
     void clearNativeTopLevelParent() override
     {
         XWindowSystem::getInstance()->setTransientFor (this->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
+
+        XWindowSystem::getInstance()->setAppearsOnTaskbar(this->windowH, true);
     }
 
     void textInputRequired (Point<int>, TextInputTarget&) override  {}

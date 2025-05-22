@@ -148,6 +148,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       the parent window will move on top of the child until the child loses its key status and then regains, which refreshes the z-order
       and puts the child on top again, OR the child is made always on top again (potentially without losing and regaining its key status)
   * I think the fix for the windows bug above will fix this 
+- [X] on linux (ubuntu/GNOME on my machine), removing a window from the taskbar with `_NET_WM_STATE_SKIP_TASKBAR` doesn't work until the taskbar gets "refreshed",
+      which seems to occur when a window other than the newly adopted child is activated. 
+      You can then reactivate the newly created child, and everything works seamlessly
 
 
 # Changes to existing parts of JUCE

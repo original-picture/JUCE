@@ -205,7 +205,7 @@ public:
     void toBehind (::Window, ::Window otherWindow) const;
     bool setTransientFor (::Window toBeOwned, ::Window toBeOwner) const;
 
-    void
+    void setAppearsOnTaskbar (::Window, bool shouldAppearOnTaskbar) const;
 
     bool isFocused (::Window) const;
     bool grabFocus (::Window) const;
