@@ -355,10 +355,10 @@ public:
 
             XWindowSystem::getInstance()->setAppearsOnTaskbar(this->windowH, false);
 
-            XWindowSystem::getInstance()->toFront(parentX11Peer->windowH, true);
-            XWindowSystem::getInstance()->toFront(this->windowH,          true);
-        }
-        else
+            XWindowSystem::getInstance()->toFront(parentX11Peer->windowH, true); // silly workaround. At least on GNOME, when you remove a window from the taskbar,
+            XWindowSystem::getInstance()->toFront(this->windowH,          true); // the taskbar doesn't actually get updated (will still show the hidden window) until you activate a different window that shows on the same icon,
+        }                                                                        // So to make everything work, I just activate the parent (it doesn't have to be the parent, any window from this program would work, the parent is just the most convenient one to use)
+        else                                                                     // and then reactivate this window
         {
             jassertfalse; // wrong type of window?
         }

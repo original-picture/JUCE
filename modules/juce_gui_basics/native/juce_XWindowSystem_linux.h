@@ -94,7 +94,7 @@ namespace XWindowSystemUtilities
 
         static constexpr unsigned long DndVersion = 3;
 
-        Atom protocols, protocolList[3], changeState, state, userTime, activeWin, pid, windowType, windowState, windowStateHidden,
+        Atom protocols, protocolList[3], changeState, state, userTime, activeWin, pid, windowType, windowState, windowStateHidden, windowStateSkipTaskbar,
              XdndAware, XdndEnter, XdndLeave, XdndPosition, XdndStatus, XdndDrop, XdndFinished, XdndSelection,
              XdndTypeList, XdndActionList, XdndActionDescription, XdndActionCopy, XdndActionPrivate,
              XembedMsgType, XembedInfo, allowedActions[5], allowedMimeTypes[4], utf8String, clipboard, targets;
@@ -203,6 +203,9 @@ public:
 
     void toFront  (::Window, bool makeActive) const;
     void toBehind (::Window, ::Window otherWindow) const;
+
+    bool setAlwaysOnTop(::Window, bool shouldBeAlwaysOnTop);
+
     bool setTransientFor (::Window toBeOwned, ::Window toBeOwner) const;
 
     void setAppearsOnTaskbar (::Window, bool shouldAppearOnTaskbar) const;

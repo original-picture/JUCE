@@ -88,7 +88,11 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] ugh. `ComponentPeer::styleFlags` is const. Which means that `windowAppearsOnTaskbar` is const,
       which means that I can't change it without creating a new object. On windows and macOS, owned/child windows don't show up on the taskbar,
       so right now the value of `windowAppearsOnTaskbar` is inconsistent with the actual state of the window, and there isn't a straightforward way to fix this
-  * could just make StyleFlags not const?
+  * could just make `styleFlags` not const?
+  * tbh might not be the end of the world if `styleFlags` doesn't reflect the actual state of the window,
+     because `_NET_WM_STATE_SKIP_TASKBAR` might not be supported, in which case the window isn't removed from the taskbar.  
+     So there already exists a situation where the value of `styleFlags` and the actual state of the window are different, so `styleFlags` wasn't an 100% binding contract to begin with,
+     and any users calling `getStyleFlags()` should be aware of this
  
 
 ## Bugs
