@@ -1695,15 +1695,15 @@ public:
             renderContext->updateConstantAlpha();
     }
 
-    void setMinimised (bool shouldBeMinimised) override
+    void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
-        if (shouldBeMinimised != isMinimised())
+        if (shouldBeMinimised || shouldBeMinimised != isActuallyMinimised())
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
     }
 
-    bool isMinimised() const override
+    bool isActuallyMinimised() const
     {
         WINDOWPLACEMENT wp;
         wp.length = sizeof (WINDOWPLACEMENT);
@@ -4153,6 +4153,7 @@ private:
                 AccessibilityHandler::clearCurrentlyFocusedHandler();
                 updateKeyModifiers();
                 handleFocusGain();
+                setMinimised (false);
                 break;
 
             case WM_KILLFOCUS:

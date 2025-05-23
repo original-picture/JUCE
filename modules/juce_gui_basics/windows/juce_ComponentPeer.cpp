@@ -205,10 +205,7 @@ void ComponentPeer::doSetAlwaysOnTopFalseWorkaround()
 
 bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
 {
-    if (alwaysOnTop == internalIsInherentlyAlwaysOnTop)
-        return true;
-
-    else if (setAlwaysOnTopWithoutSettingFlag (alwaysOnTop))
+    if (setAlwaysOnTopWithoutSettingFlag (alwaysOnTop))
     {
         internalIsInherentlyAlwaysOnTop = alwaysOnTop;
 
@@ -218,13 +215,13 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
         }                                                                     // but the only time setAlwaysOnTopWithoutSettingFlag returns false is on linux,
                                                                               // where it always returns false, so in practice, checking the return value of just one call to setAlwaysOnTopWithoutSettingFlag succeeds is sufficient
                                                                               // though of course all of this could change in the future...
-        if(! alwaysOnTop)
-            doSetAlwaysOnTopFalseWorkaround();
+        if(! alwaysOnTop)                                                     // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
+            doSetAlwaysOnTopFalseWorkaround(); // Windows, linux, and macOS all behave weirdly when calling setAlwaysOnTop (false) on a child window. This workaround makes everything work nicely. See the readme for more details
 
         return true;
-    }                                                                         // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
-    else
-        return false;
+    }
+    
+    return false;
 }
 
 void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop)
@@ -637,6 +634,51 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 {
     return detail::ScalingHelpers::scaledScreenPosToUnscaled
             (component, component.getLocalArea (&subComponent, subComponent.getLocalBounds()));
+}
+
+//=============================================================================
+void ComponentPeer::setMinimised (bool shouldBeMinimised)
+{
+    internalIsInherentlyMinimised = shouldBeMinimised;
+    setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+}
+
+void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
+{
+    if (! shouldBeMinimised)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
+        setMinimisedWithoutSettingFlag (shouldBeMinimised); // and postorder if we're minimising it. !
+
+    for (auto* peer : topLevelChildPeerList)
+    {                                                                      // don't accidentally maximise an inherently minimised window
+        peer->setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised || peer->isInherentlyMinimised());
+    }
+
+    if (shouldBeMinimised)
+        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+}
+
+bool ComponentPeer::isMinimised() const noexcept
+{          // short circuit evaluation allows us to avoid calling isAncestrallyMinimised() if we don't have to
+    return isInherentlyMinimised() || isAncestrallyMinimised();
+                                      // indirect recursion (isAncestrallyMinimised() can call isMinimised())
+}
+
+bool ComponentPeer::isAncestrallyMinimised() const noexcept
+{
+
+    if(topLevelParentPeer != nullptr)
+    {
+        return topLevelParentPeer->isMinimised(); // indirect recursion (isMinimised() can call isAncestrallyMinimised())
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool ComponentPeer::isInherentlyMinimised() const noexcept
+{
+    return internalIsInherentlyMinimised;
 }
 
 //==============================================================================

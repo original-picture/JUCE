@@ -238,11 +238,26 @@ public:
     */
     Rectangle<int> getAreaCoveredBy (const Component& subComponent) const;
 
-    /** Minimises the window. */
-    virtual void setMinimised (bool shouldBeMinimised) = 0;
+    /** Minimises the window. Child peers will be minimized recursively. */
+    void setMinimised (bool shouldBeMinimised);
 
-    /** True if the window is currently minimised. */
-    virtual bool isMinimised() const = 0;
+    /** Returns true if this peer is minimized.
+        Equivalent to isInherentlyMinimised() || isAncestrallyMinimised()
+        @see setMinimised, isAncestrallyMinimised, isInherentlyMinimised
+    */
+    bool isMinimised() const noexcept;
+
+    /** Returns true if this peer has ancestors that are minimised.
+        Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
+        @see setMinimised, isMinimised, isInherentlyMinimised
+    */
+    bool isAncestrallyMinimised() const noexcept;
+
+    /** Returns true if this component is minimised because setMinimised(true) was called on it specifically.
+        Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
+        @see setMinimised, isMinimised, isAncestrallyMinimised
+    */
+    bool isInherentlyMinimised() const noexcept;
 
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;
@@ -661,6 +676,7 @@ protected:
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
                                                   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
+    bool internalIsInherentlyMinimised = false;
 
 private:
     //==============================================================================
@@ -686,6 +702,9 @@ private:
 
     void globalFocusChanged (Component*) override;
     Component* getTargetForKeyPress();
+
+    virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
+    void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
 
     void recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop = false);
     void doSetAlwaysOnTopFalseWorkaround();
