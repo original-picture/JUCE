@@ -276,7 +276,7 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 {
     jassert (this != &child); // adding a peer to itself!?
 
-    if (child.topLevelParentPeer != this)  // TODO: add actual cycle detection here?
+    if (child.topLevelParentPeer != this) // TODO: add actual cycle detection here?
     {
         if (child.topLevelParentPeer != nullptr)
             child.topLevelParentPeer->removeTopLevelChildPeer (&child);
