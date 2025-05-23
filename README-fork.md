@@ -93,6 +93,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
      because `_NET_WM_STATE_SKIP_TASKBAR` might not be supported, in which case the window isn't removed from the taskbar.  
      So there already exists a situation where the value of `styleFlags` and the actual state of the window are different, so `styleFlags` wasn't an 100% binding contract to begin with,
      and any users calling `getStyleFlags()` should be aware of this
+- [ ] maybe write a utility function for setting `_NET_WM_STATE` atoms in juce_XWindowSystem_linux.cpp
  
 
 ## Bugs
