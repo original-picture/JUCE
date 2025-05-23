@@ -179,12 +179,35 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
+void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop)
+{
+    currentNodeIsAlwaysOnTop |= this->isInherentlyAlwaysOnTop(); // since we're traversing the hierarchy from the root, we might as well keep track of the (ancestrally) always on top status ourselves
+                                                                 // (as opposed to using isAlwaysOnTop(), which will recursively traverse UP the hierarchy to the root every time
+    if (currentNodeIsAlwaysOnTop)               // calling setAlwaysOnTopWithoutSettingFlag(false) is what causes the bug,
+        setAlwaysOnTopWithoutSettingFlag(true); // so it's important that we only call setAlwaysOnTopWithoutSettingFlag(true), otherwise we would be undoing our work
+
+    for (auto* peer : topLevelChildPeerList)
+    {
+        peer->recursivelyRefreshAlwaysOnTopStatus(currentNodeIsAlwaysOnTop);
+    }
+}
+
+void ComponentPeer::doSetAlwaysOnTopFalseWorkaround()
+{
+    ComponentPeer* peer = this;
+    while (peer->topLevelParentPeer != nullptr) // get the highest level ancestor of this peer
+    {
+        peer = peer->topLevelParentPeer;
+    }
+
+    peer->recursivelyRefreshAlwaysOnTopStatus();
+}
+
 bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
 {
     if (alwaysOnTop == internalIsInherentlyAlwaysOnTop)
-    {
         return true;
-    }
+
     else if (setAlwaysOnTopWithoutSettingFlag (alwaysOnTop))
     {
         internalIsInherentlyAlwaysOnTop = alwaysOnTop;
@@ -194,27 +217,15 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
             child->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop); // I guess technically I should be checking to see if all these recursive calls succeed
         }                                                                     // but the only time setAlwaysOnTopWithoutSettingFlag returns false is on linux,
                                                                               // where it always returns false, so in practice, checking the return value of just one call to setAlwaysOnTopWithoutSettingFlag succeeds is sufficient
-        return true;                                                          // though of course all of this could change in the future...
-    }
+                                                                              // though of course all of this could change in the future...
+        if(! alwaysOnTop)
+            doSetAlwaysOnTopFalseWorkaround();
+
+        return true;
+    }                                                                         // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
     else
-    {
         return false;
-    }
 }
-
-/*
-bool ComponentPeer::setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop)
-{
-    // this implementation is kind of hacky,
-    // but this is the best way I can think of doing this without making big changes to the existing implementation
-
-    bool wasInherentlyAlwaysOnTop = internalIsInherentlyAlwaysOnTop; // save this value, because setAlwaysOnTop will change it
-    bool success = setAlwaysOnTop(alwaysOnTop);
-    internalIsInherentlyAlwaysOnTop = wasInherentlyAlwaysOnTop; // restore previous value
-
-    return success;
-}
-*/
 
 void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop)
 {
@@ -227,7 +238,6 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
             peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
         }
     }
-
 
     // there is no flag member variable for isAncestrallyAlwaysOnTop
     // an always on top ancestor is checked for recursively each time, without any caching

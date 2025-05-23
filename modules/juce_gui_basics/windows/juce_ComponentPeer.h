@@ -687,10 +687,16 @@ private:
     void globalFocusChanged (Component*) override;
     Component* getTargetForKeyPress();
 
-    /**
+    void recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop = false);
+    void doSetAlwaysOnTopFalseWorkaround();
+
+   /**
      * Used to support ancestrally always on top peers.
      * An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
      * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
+     *
+     * Note to any developers reading this in the future, don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
+     * A workaround in
     */
     virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
 
