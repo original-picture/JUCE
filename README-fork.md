@@ -163,6 +163,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * fixed by checking for this situation in `NSViewComponentPeer::resignKeyWindow()` and calling `setAlwaysOnTopWithoutSettingFlag (true)` if it occurs
 - [ ] on linux, the active window isn't maintained when alt+tabbing off and back on to a window hierarchy.  
   when tabbing back on, the active window is always the root window, regardless of which window was active before tabbing off
+- [ ] on macOS, minimizing a window that has children will make the children disappear during the minimization animation. 
+      Doesn't affect behavior, but looks ugly
 
 
 
