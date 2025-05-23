@@ -146,15 +146,19 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
 - [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
       all of the windows will get minimized (obviously), but they w
-- [ ] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  
+- [X] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  
       interestingly, making a window always on top only affects the window and its owned windows
-- [ ] on macOS, if both the parent and the child window are made always on top, and then the child window is made *not* always on top, 
+  * fixed with workaround 
+- [X] on macOS, if both the parent and the child window are made always on top, and then the child window is made *not* always on top, 
       the parent window will move on top of the child until the child loses its key status and then regains, which refreshes the z-order
       and puts the child on top again, OR the child is made always on top again (potentially without losing and regaining its key status)
   * I think the fix for the windows bug above will fix this 
+    * it did
 - [X] on linux (ubuntu/GNOME on my machine), removing a window from the taskbar with `_NET_WM_STATE_SKIP_TASKBAR` doesn't work until the taskbar gets "refreshed",
       which seems to occur when a window other than the newly adopted child is activated. 
       You can then reactivate the newly created child, and everything works seamlessly
+- [ ] on macOS, if a child window is always on top but its parent isn't, alt+tabbing (command+tabbing?) off the window once will have the expected behavior
+      (the parent will disappear but the child will stay in place), but repeated alt+tabbing will make the child disappear too (incorrect)
 
 
 # Changes to existing parts of JUCE
