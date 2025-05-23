@@ -158,8 +158,12 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] on linux (ubuntu/GNOME on my machine), removing a window from the taskbar with `_NET_WM_STATE_SKIP_TASKBAR` doesn't work until the taskbar gets "refreshed",
       which seems to occur when a window other than the newly adopted child is activated. 
       You can then reactivate the newly created child, and everything works seamlessly
-- [ ] on macOS, if a child window is always on top but its parent isn't, alt+tabbing (command+tabbing?) off the window once will have the expected behavior
+- [X] on macOS, if a child window is always on top but its parent isn't, alt+tabbing (command+tabbing?) off the window once will have the expected behavior
       (the parent will disappear but the child will stay in place), but repeated alt+tabbing will make the child disappear too (incorrect)
+  * fixed by checking for this situation in `NSViewComponentPeer::resignKeyWindow()` and calling `setAlwaysOnTopWithoutSettingFlag (true)` if it occurs
+- [ ] on linux, the active window isn't maintained when alt+tabbing off and back on to a window hierarchy.  
+  when tabbing back on, the active window is always the root window, regardless of which window was active before tabbing off
+
 
 
 # Changes to existing parts of JUCE
