@@ -167,6 +167,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
         If you click off the child window and then back on, and THEN try alt tabbing, its active status is maintained 
 - [ ] on macOS, minimizing a window that has children will make the children disappear during the minimization animation. 
       Doesn't affect behavior, but looks ugly
+- [ ] because of the way macOS's miniaturization system works, it's possible to deminiaturize a child window whose parent is still miniaturized. 
+      This causes all kinds of weird behavior
 
 
 

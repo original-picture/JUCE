@@ -456,7 +456,7 @@ public:
             [window setAlphaValue: (CGFloat) newAlpha];
     }
 
-    void setMinimised (bool shouldBeMinimised) override
+    void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         if (! isSharedWindow)
         {
@@ -466,12 +466,12 @@ public:
                 [window deminiaturize: nil];
         }
     }
-
+/*
     bool isMinimised() const override
     {
         return [window isMiniaturized];
     }
-
+*/
     bool isShowing() const override
     {
         return [window isVisible] && ! isMinimised();
@@ -1699,11 +1699,13 @@ public:
     // I had to write this and didDeminiaturize because I needed access to topLevelParentPeer which is a protected member of ComponentPeer
     void willMiniaturize()
     {
+        setMinimised (true); // we have to call this manually
+
         if(topLevelParentPeer != nullptr)
         {
             if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
             {
-                clearNativeTopLevelParent(); // for some reason, minimizing a child window minimizes its parent too,
+                clearNativeTopLevelParent(); // for some reason, minimizing a child window minimizes its parent too.
             }                                // So as a workaround, we can unparent the window before it minimizes, and then reparent it when it gets restored
             else
             {
@@ -1714,6 +1716,8 @@ public:
 
     void didDeminiaturize()
     {
+        setMinimised (false); // we have to call this manually
+
         if(topLevelParentPeer != nullptr)
         {
             if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))

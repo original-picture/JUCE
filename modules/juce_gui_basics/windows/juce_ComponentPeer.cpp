@@ -194,13 +194,7 @@ void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlways
 
 void ComponentPeer::doSetAlwaysOnTopFalseWorkaround()
 {
-    ComponentPeer* peer = this;
-    while (peer->topLevelParentPeer != nullptr) // get the highest level ancestor of this peer
-    {
-        peer = peer->topLevelParentPeer;
-    }
-
-    peer->recursivelyRefreshAlwaysOnTopStatus();
+    getHighestLevelAncestor()->recursivelyRefreshAlwaysOnTopStatus();
 }
 
 bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
@@ -362,6 +356,14 @@ void ComponentPeer::removeAllTopLevelChildren()
         removeTopLevelChildPeer (topLevelChildPeerList.size() - 1);
 }
 
+ComponentPeer* ComponentPeer::getHighestLevelAncestor() noexcept
+{
+    ComponentPeer* ret = this;
+    while (ret->topLevelParentPeer != nullptr)
+        ret = ret->topLevelParentPeer;
+
+    return ret;
+}
 
 Component* ComponentPeer::getTargetForKeyPress()
 {
@@ -639,6 +641,25 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
+    if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
+    {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
+        std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
+
+        { // limit the scope of peer
+            ComponentPeer* peer = this;
+            while ((peer = peer->topLevelParentPeer) != nullptr && ! peer->isMinimised()) // Note that this peer does NOT get pushed to the stack. this peer gets processed separately below
+                peersToProcess.push(peer);
+        }
+
+        while (! peersToProcess.empty())        // then you pop each one off the stack and deminimise it.
+        {                                       // Doing things like this ensures that
+            auto* peer = peersToProcess.top();
+            peer->setMinimised(false);
+
+            peersToProcess.pop();
+        }
+    }
+
     internalIsInherentlyMinimised = shouldBeMinimised;
     setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
 }
@@ -646,7 +667,7 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
 {
     if (! shouldBeMinimised)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
-        setMinimisedWithoutSettingFlag (shouldBeMinimised); // and postorder if we're minimising it. !
+        setMinimisedWithoutSettingFlag (shouldBeMinimised); // and postorder if we're minimising it.
 
     for (auto* peer : topLevelChildPeerList)
     {                                                                      // don't accidentally maximise an inherently minimised window

@@ -392,6 +392,10 @@ public:
     ComponentPeer* removeTopLevelChildPeer (int childIndexToRemove);
 
     void removeAllTopLevelChildren();
+
+    /** Returns the ancestor of this peer that hase no parent, or this peer, if this peer itself has no parent
+     */
+    ComponentPeer* getHighestLevelAncestor() noexcept;
 /*
       ComponentPeer* getTopLevelParentPeer() const noexcept;
 
@@ -663,6 +667,9 @@ protected:
     // also it calls virtual functions and obviously those can't be called from the destructor of the base class
     void doTopLevelChildPeerCleanup();
 
+    virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
+    void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
+
     Component& component;
     const int styleFlags;
     Rectangle<int> lastNonFullscreenBounds;
@@ -702,9 +709,6 @@ private:
 
     void globalFocusChanged (Component*) override;
     Component* getTargetForKeyPress();
-
-    virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
-    void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
 
     void recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop = false);
     void doSetAlwaysOnTopFalseWorkaround();
