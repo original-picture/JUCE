@@ -142,8 +142,11 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     That would lead to a confusing user experience
   * no that's a bad idea. Just unparent child windows (at the native level) in the destructor
 
-- [ ] on windows, minimizing a parent window will minimize the windows children, but sometimes will not minimize the children of children
+- [X] on windows, minimizing a parent window will minimize the window's children, but sometimes will not minimize the window's grandchildren
   * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
+    - [ ] I tried this, and it fixed the primary issue of grandchildren not minimizing, but now, sometimes when restoring a window with children,
+          a tiny minimized child window will be visible in the bottom left corner for a split second before it gets restoring.
+          Everything works fine, it just looks kind of janky  
   * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
 - [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
       all of the windows will get minimized (obviously), but they w
@@ -169,6 +172,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       Doesn't affect behavior, but looks ugly
 - [ ] because of the way macOS's miniaturization system works, it's possible to deminiaturize a child window whose parent is still miniaturized. 
       This causes all kinds of weird behavior
+  * I tried writing a fix but that introduced all sorts of other weirdness
+
 
 
 

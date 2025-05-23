@@ -32,10 +32,14 @@
   ==============================================================================
 */
 
+#include <stack>
+
+
 namespace juce
 {
 
 static uint32 lastUniquePeerID = 1;
+
 
 //==============================================================================
 ComponentPeer::ComponentPeer (Component& comp, int flags)
