@@ -645,7 +645,7 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
-    if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
+    /*if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
     {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
         std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
 
@@ -665,7 +665,10 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     }
 
     internalIsInherentlyMinimised = shouldBeMinimised;
-    setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+    setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);*/
+
+    setMinimisedWithoutSettingFlag(shouldBeMinimised);
+    internalIsInherentlyMinimised = shouldBeMinimised;
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
