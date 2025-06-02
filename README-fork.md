@@ -146,8 +146,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
     - [ ] I tried this, and it fixed the primary issue of grandchildren not minimizing, but now, sometimes when restoring a window with children,
           a tiny minimized child window will be visible in the bottom left corner for a split second before it gets restoring.
-          Everything works fine, it just looks kind of janky  
+          Everything works fine, it just looks kind of janky
   * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
+  * activating a direct child of the top level ancestor of the hierarchy before minimizing seems to fix this, but only if the ancestor (?) isn't always on top
 - [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
       all of the windows will get minimized (obviously), but they w
 - [X] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  

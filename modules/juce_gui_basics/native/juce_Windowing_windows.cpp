@@ -1699,6 +1699,36 @@ public:
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
+        if (topLevelParentPeer != nullptr)
+        {
+           //auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+
+            bool wasAlwaysOnTop = isAlwaysOnTop();
+            if (shouldBeMinimised)
+            {
+                if (wasAlwaysOnTop)
+                {
+                    setAlwaysOnTopWithoutSettingFlag (false);
+                }
+
+                clearNativeTopLevelParent();
+                //existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW;
+            }
+            else
+            {
+                if (wasAlwaysOnTop)
+                {
+                    setAlwaysOnTopWithoutSettingFlag (true);
+                }
+                setNativeTopLevelParent(topLevelParentPeer);
+                //existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
+            }
+
+            //SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+        }
+
+
+
         if (shouldBeMinimised || shouldBeMinimised != isActuallyMinimised())
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
     }
@@ -2480,7 +2510,7 @@ private:
             }
 
             exstyle |= appearsOnTaskbar ? WS_EX_APPWINDOW : WS_EX_TOOLWINDOW;
-        }                                                                    
+        }
 
         hwnd = CreateWindowEx (exstyle, WindowClassHolder::getInstance()->getWindowClassName(),
                                L"", type, 0, 0, 0, 0, parentToAddTo, nullptr,

@@ -667,7 +667,7 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     internalIsInherentlyMinimised = shouldBeMinimised;
     setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);*/
 
-    setMinimisedWithoutSettingFlag(shouldBeMinimised);
+    setMinimisedRecursivelyWithoutSettingFlag(shouldBeMinimised);
     internalIsInherentlyMinimised = shouldBeMinimised;
 }
 
