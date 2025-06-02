@@ -1701,7 +1701,7 @@ public:
 
         if (topLevelParentPeer != nullptr)
         {
-           //auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+           auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
 
             bool wasAlwaysOnTop = isAlwaysOnTop();
             if (shouldBeMinimised)
@@ -1711,8 +1711,8 @@ public:
                     setAlwaysOnTopWithoutSettingFlag (false);
                 }
 
-                clearNativeTopLevelParent();
-                //existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW;
+                //clearNativeTopLevelParent();
+                existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW;
             }
             else
             {
@@ -1720,11 +1720,11 @@ public:
                 {
                     setAlwaysOnTopWithoutSettingFlag (true);
                 }
-                setNativeTopLevelParent(topLevelParentPeer);
-                //existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
+                //setNativeTopLevelParent(topLevelParentPeer);
+                existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
             }
 
-            //SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
         }
 
 
