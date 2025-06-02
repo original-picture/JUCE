@@ -174,7 +174,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] because of the way macOS's miniaturization system works, it's possible to deminiaturize a child window whose parent is still miniaturized. 
       This causes all kinds of weird behavior
   * I tried writing a fix but that introduced all sorts of other weirdness
-
+- [ ] `SC_RESTORE` doesn't cause `setMinimised (false)` to get called, but the window restores anyway??
 
 
 

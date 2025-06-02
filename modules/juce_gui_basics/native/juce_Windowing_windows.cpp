@@ -1699,9 +1699,10 @@ public:
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
+        auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+
         if (topLevelParentPeer != nullptr)
         {
-           auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
 
             bool wasAlwaysOnTop = isAlwaysOnTop();
             if (shouldBeMinimised)
@@ -1712,7 +1713,7 @@ public:
                 }
 
                 //clearNativeTopLevelParent();
-                existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW;
+                //existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW;
             }
             else
             {
@@ -1721,16 +1722,16 @@ public:
                     setAlwaysOnTopWithoutSettingFlag (true);
                 }
                 //setNativeTopLevelParent(topLevelParentPeer);
-                existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
+                //existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW;
             }
 
-            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
         }
 
-
+        SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
         if (shouldBeMinimised || shouldBeMinimised != isActuallyMinimised())
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
+
     }
 
     bool isActuallyMinimised() const
