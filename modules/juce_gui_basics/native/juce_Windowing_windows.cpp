@@ -4353,6 +4353,10 @@ private:
 
                         return 0;
                     }
+
+                    setMinimised (false);
+                    return 0;
+
                     break;
                 }
 
