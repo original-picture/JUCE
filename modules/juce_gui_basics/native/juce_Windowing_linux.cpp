@@ -205,9 +205,19 @@ public:
     void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         if (shouldBeMinimised)
+        {
+            if(topLevelParentPeer != nullptr)
+                clearNativeTopLevelParent();
+
             XWindowSystem::getInstance()->setMinimised (windowH, shouldBeMinimised);
+        }
         else
+        {
+            if(topLevelParentPeer != nullptr)
+                setNativeTopLevelParent(topLevelParentPeer);
+
             setVisible (true);
+        }
     }
 
    /* bool isMinimised() const override
