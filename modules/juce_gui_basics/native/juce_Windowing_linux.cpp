@@ -202,7 +202,7 @@ public:
         XWindowSystem::getInstance()->setTitle (windowH, title);
     }
 
-    void setMinimised (bool shouldBeMinimised) override
+    void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         if (shouldBeMinimised)
             XWindowSystem::getInstance()->setMinimised (windowH, shouldBeMinimised);
@@ -210,10 +210,10 @@ public:
             setVisible (true);
     }
 
-    bool isMinimised() const override
+   /* bool isMinimised() const override
     {
         return XWindowSystem::getInstance()->isMinimised (windowH);
-    }
+    }*/
 
     bool isShowing() const override
     {
@@ -326,7 +326,7 @@ public:
 
     void performAnyPendingRepaintsNow() override
     {
-        if (repainter != nullptr)
+        if (repainter  != nullptr)
             repainter->performAnyPendingRepaintsNow();
     }
 
