@@ -1703,14 +1703,15 @@ public:
 
         if(topLevelParentPeer != nullptr)
         {
-            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
-            {
-                clearNativeTopLevelParent(); // for some reason, minimizing a child window minimizes its parent too.
-            }                                // So as a workaround, we can unparent the window before it minimizes, and then reparent it when it gets restored
-            else
-            {
-                jassertfalse; // parent peer was the wrong type? How does this even happen?
+            if (! topLevelChildPeerList.isEmpty()) /// !!!! THIS HAS TO HAPPEN BEFORE THE clearNativeTopLevelParent() CALL BELOW
+            {                                      /// !!!! IF YOU TRY TO DO IT THE OTHER WAY AROUND, MINIMIZING A WINDOW THAT HAS A PARENT AND CHILDREN WILL CAUSE THE WINDOW'S PARENT TO ERRONEOUSLY MINIMIZE AS WELL
+                                                   /// !!!! I have no idea why this happens. Yes, it sucks that things are sequentially coupled like this. Get mad at apple, not me
+                grabFocus(); // this is a fix for a bug where attempting to minimise a child window that also has its own children that is NOT key will fail (it gets spat out and deminimised immediately)
+                             // for some reason the bug doesn't occur with windows that have no parent or no children
             }
+
+            clearNativeTopLevelParent(); // for some reason, minimising a child window minimises its parent too.
+                                         // So as a workaround, we can unparent the window before it minimises, and then reparent it when it gets restored
         }
     }
 
@@ -2321,7 +2322,7 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
                 if (p->isAlwaysOnTop)
                 {
                     // there is a bug when restoring minimised always on top windows so we need
-                    // to remove this behaviour before minimising and restore it afterwards
+                    // to remove this behaviour before minimising and restore it afterward
                     p->setAlwaysOnTop (false);
                     p->wasAlwaysOnTop = true;  // these lines could go in the newly created NSViewComponentPeer::didMiniaturize, but this isn't my code so I don't want to move it
                 }

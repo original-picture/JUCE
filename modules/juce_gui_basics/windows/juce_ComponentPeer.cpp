@@ -667,8 +667,12 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     /*internalIsInherentlyMinimised = shouldBeMinimised;
     setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);*/
 
+    #ifdef __APPLE__
+        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+    #else
+        setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+    #endif
 
-    setMinimisedRecursivelyWithoutSettingFlag(shouldBeMinimised);
     internalIsInherentlyMinimised = shouldBeMinimised;
 }
 
