@@ -1698,8 +1698,8 @@ public:
     void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
-         
-        if (shouldBeMinimised || shouldBeMinimised != isActuallyMinimised())
+
+        if (shouldBeMinimised || (shouldBeMinimised != isActuallyMinimised()))
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
 
     }
