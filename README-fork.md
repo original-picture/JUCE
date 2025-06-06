@@ -110,7 +110,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     * ~~might be enough to just set the style flag. I don't see any style flag setters doing anything fancy~~
       * never mind, `styleFlags` is const so I'm just gonna not worry about it
   * **fixed by unsetting `WS_EX_APPWINDOW`**
-- [ ] ~~minimizing the child window on macOS minimizes the parent window too.~~
+- [X] ~~minimizing the child window on macOS minimizes the parent window too.~~
   * ~~The parent window then can't be deminimised by clicking its icon in the dock,
     the only way to bring it back is to click the icon of the minimized child window~~
   * ~~this might just be how child windows work on macOS~~
@@ -119,7 +119,6 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     * ~~**apparently this behavior is simply unavoidable**~~
       * ~~source: [this file from QT 4.8.6](https://github.com/Kitware/fletch/blob/70f4e025067453cbf2f40565c05d80c6263d64c8/Patches/Qt/4.8.6/gui/kernel/qwidget_mac.mm#L4) (ctrl+F for addChildWindow and read the relevant comment)~~
         * never mind, I found a workaround!
-
 - [ ] not really even a bug, but moving the parent window on macOS moves the child window too
   * ~~this is seemingly just how things work on macOS~~
   * ~~not a huge deal but this behavior is inconsistent with how things work with win32 and X11~~
@@ -127,7 +126,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     (e.g., Windows users expect an owned window to stay put when its owner is dragged and macOS users expect a child window to move with its parent)~~ 
   * **it seems this is unavoidable. See my note about minimizing child windows doing strange things on macOS**
   * child window positions are updated when the parent is dragged, so this probably won't cause any issues
-- [ ] on macOS, child windows are always stacked in the order they were added as children.
+- [X] on macOS, child windows are always stacked in the order they were added as children.
     * Clicking and dragging a window doesn't affect its z-order
     * irritatingly, `orderFront` and `orderBack` seemingly have no effect on child windows
     * I found a dumb hack though. If you remove the child window and then add it again it will show on top
@@ -135,7 +134,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
         * yep, this fixed it
     * handling more complex reordering operations like sending windows to the back or the middle would require removing and re-adding multiple (potentially all) child windows
     * Maybe this isn't even a bug. Is this just how things work on macOS? Is this the behavior macOS users would expect?
-- [ ] on windows and macOS (but not X11/linux), deleting an owned window deletes all its child windows (the actual native windows get deleted, but the juce objects don't get deleted)
+- [X] on windows and macOS (but not X11/linux), deleting an owned window deletes all its child windows (the actual native windows get deleted, but the juce objects don't get deleted)
   * not shocking  considering the owner/owned nomenclature
   * maybe I should make the parent-child relationship owning on the C++ side too, 
     not just to fix this bug, but also because a child window really shouldn't outlive its parent.
@@ -144,13 +143,12 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 
 - [X] on windows, minimizing a parent window will minimize the window's children, but sometimes will not minimize the window's grandchildren
   * maybe just make `ComponentPeer::setMinimized` recursively call itself on children
-    - [ ] I tried this, and it fixed the primary issue of grandchildren not minimizing, but now, sometimes when restoring a window with children,
+    - [ ] ~~I tried this, and it fixed the primary issue of grandchildren not minimizing, but now, sometimes when restoring a window with children,
           a tiny minimized child window will be visible in the bottom left corner for a split second before it gets restoring.
-          Everything works fine, it just looks kind of janky
+          Everything works fine, it just looks kind of janky~~
+      * I ended up abandoning this approach
   * calling `setAlwaysOnTop` on the parent window seems to make this bug happen all the time instead of only sometimes
   * activating a direct child of the top level ancestor of the hierarchy before minimizing seems to fix this, but only if the ancestor (?) isn't always on top
-- [ ] not really a bug, but on macOS if a parent and its children are minimized one by one, starting with the children and ending with the parent,
-      all of the windows will get minimized (obviously), but they w
 - [X] on windows, making a window *not* always on top will make the entire hierarchy not always on top.  
       interestingly, making a window always on top only affects the window and its owned windows
   * fixed with workaround 
@@ -185,6 +183,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * I think the window manager does this if too many windows get minimised in a short period of time 
     (maybe it's trying to conserve resources by limiting the number of animations that can play simultaneously?)
   * not a behavioral issue, just looks kind of bad
+- [ ] on macOS, if you deminiaturise a window that has a miniaturised parent, the parent will become the key window instead of the child (wrong)
+- [ ] on windows, child windows render black, white, or transparent after being restored
+  * also attempting to minimise the restored window doesn't minimise it, but does fix the incorrect rendering
+  * also moving the window fixes the rendering
 
 
 # Changes to existing parts of JUCE
@@ -197,6 +199,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * I figured it out. It's used in workaround to prevent some bug from occurring when always on top windows are minimized
 * should an always on top window be on top of all other peers or just its siblings?
 * sometimes JUCE internally destroys and recreates peers (see `Component::setAlwaysOnTop`). Will this break child peer functionality?
+* consider how minimisation will work
+* on win32, minimising an owner window HIDES (not minimises) its owned windows. This means my recursive minimisation code is kind of not in line with the way windows usually does things
+  * but also minimisation on windows is literally broken with more than one layer of children. Plus I think making owned windows hide instead of minimise is kind of unintuitive
 
 # Things to ask the maintainers
 * I've added a protected member `internalIsInherentlyAlwaysOnTop` to `ComponentPeer`, 
