@@ -651,24 +651,23 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
 
         { // limit the scope of peer
             ComponentPeer* peer = this;
-            while (((peer = peer->topLevelParentPeer) != nullptr) && /*!*/ peer->isMinimised()) // Note that this peer does NOT get pushed to the stack. this peer gets processed separately below
-                peersToProcess.push(peer);
+            while (((peer = peer->topLevelParentPeer) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
+                peersToProcess.push (peer);
         }
 
-        while (! peersToProcess.empty())        // then you pop each one off the stack and deminimise it.
+        while (! peersToProcess.empty()) // then you pop each one off the stack and deminimise it.
         {
             auto* peer = peersToProcess.top();
-            peer->setMinimised(false);
-
             peersToProcess.pop();
+
+            peer->setMinimised (false);
         }
     }
 
-    /*internalIsInherentlyMinimised = shouldBeMinimised;
-    setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);*/
-
     #ifdef __APPLE__
-        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+        setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
+                                                            // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
+                                                            // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
     #else
         setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
     #endif
