@@ -1699,8 +1699,25 @@ public:
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
-        if (shouldBeMinimised || (shouldBeMinimised != isActuallyMinimised()))
-            ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
+        if ((styleFlags & ComponentPeer::windowSkipsTaskbarNormalTitleBar) != 0 || (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0)
+        {
+            auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+
+            if (shouldBeMinimised)
+            {
+                existingWindowFlags |= WS_EX_APPWINDOW;
+                existingWindowFlags &= ~WS_EX_TOOLWINDOW;
+            }
+            else
+            {
+                if ((styleFlags & windowSkipsTaskbarNormalTitleBar) != 0)
+                    existingWindowFlags &= ~WS_EX_APPWINDOW;
+                else // (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0
+                    existingWindowFlags |= WS_EX_TOOLWINDOW;
+            }
+            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+        }
+
 
     }
 
@@ -1822,9 +1839,9 @@ public:
 
             //setMinimised (false);
 
-            auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
-            existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW; // child window will show on the taskbar if we don't do this
-            SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+            /// auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+            /// existingWindowFlags = existingWindowFlags & ~WS_EX_APPWINDOW; // child window will show on the taskbar if we don't do this
+            /// SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
             /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
             /// source: https://stackoverflow.com/a/133415
@@ -1845,9 +1862,9 @@ public:
 
         //setMinimised (false);
 
-        auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
-        existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
-        SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
+        // auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
+        // existingWindowFlags = existingWindowFlags | WS_EX_APPWINDOW; // window is no longer owned so let it show on the taskbar again
+        // SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
 
         /// I know this says GWLP_HWNDPARENT (emphasis on the PARENT), but I promise you this sets the window OWNER, not the window parent
         /// source: https://stackoverflow.com/a/133415
@@ -2454,6 +2471,7 @@ private:
         const auto hasMin = (styleFlags & windowHasMinimiseButton) != 0;
         const auto hasMax = (styleFlags & windowHasMaximiseButton) != 0;
         const auto appearsOnTaskbar = (styleFlags & windowAppearsOnTaskbar) != 0;
+        const auto skipsTaskbarNormalTitleBar = (styleFlags & windowSkipsTaskbarNormalTitleBar) != 0;
         const auto resizable = (styleFlags & windowIsResizable) != 0;
         const auto usesDropShadow = windowUsesNativeShadow();
 
@@ -2480,7 +2498,10 @@ private:
                 type |= WS_POPUP;
             }
 
-            exstyle |= appearsOnTaskbar ? WS_EX_APPWINDOW : WS_EX_TOOLWINDOW;
+            if (skipsTaskbarNormalTitleBar)
+                exstyle &= ~WS_EX_APPWINDOW;
+            else
+                exstyle |= appearsOnTaskbar ? WS_EX_APPWINDOW : WS_EX_TOOLWINDOW;
         }
 
         hwnd = CreateWindowEx (exstyle, WindowClassHolder::getInstance()->getWindowClassName(),

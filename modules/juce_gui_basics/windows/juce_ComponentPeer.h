@@ -84,7 +84,9 @@ public:
                                                                            asynchronous Core Graphics drawing operations. Use this if there
                                                                            are issues with regions not being redrawn at the expected time
                                                                            (macOS and iOS only). */
-        windowIsSemiTransparent                         = (1 << 30)   /**< Not intended for public use - makes a window transparent. */
+        windowIsSemiTransparent                         = (1 << 30),  /**< Not intended for public use - makes a window transparent. */
+
+        windowSkipsTaskbarNormalTitleBar                = (1 << 31)
 
     };
 

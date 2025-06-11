@@ -69,14 +69,6 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     * but then again, if child peers were added, JUCE would then have **three** distinct systems hierarchical systems for organizing GUI elements (child components, `addToDesktop`/`nativeWindowToAttachTo`, and child peers)
       * buuuuuut on the other hand you could argue that it's not really that bad because, again, there probably aren't all that many people using `nativeWindowToAttachTo`, so it's more like 2.5 distinct systems
 - [ ] make `addChildPeer` fail if the peer has already been attached to a native parent via `addToDesktop`?
-- [ ] the `addToDesktop`/`nativeWindowToAttachTo` API seems kind of incomplete. Maybe give it some more utility functions
-  * there are seemingly no functions for checking if a peer has a parent window, reparenting a window, enumerating child windows, etc. 
-- [ ] when a child's parent is deleted, have it get adopted by its grandparent?
-  * just mimic whatever component does
-  * hide window when its parent dies?
-  * also doesn't matter in practice because you really shouldn't close a window without closing its children
-- [ ] make sure child windows receive minimization and close notifications
-  * this might just work automatically 
 
 - [ ] don't allow calling `toBehind` with an always on top window and a *not* always on top window
  * copy component's behavior 
@@ -94,7 +86,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
      So there already exists a situation where the value of `styleFlags` and the actual state of the window are different, so `styleFlags` wasn't an 100% binding contract to begin with,
      and any users calling `getStyleFlags()` should be aware of this
 - [ ] maybe write a utility function for setting `_NET_WM_STATE` atoms in juce_XWindowSystem_linux.cpp
+- [ ] document `windowSkipsTaskbarNormalTitleBar`
  
+
 
 ## Bugs
 - [x] *indicates a fixed bug*  
@@ -207,3 +201,15 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * I see a mix of these in existing JUCE code
 * Should I refrain from adding functions that don't work on all platforms, or include them but return a code indicating success/failure?
   * `setAlwaysOnTop` comes to mind (always fails and returns false on X11)
+
+# Immediate todo
+- [ ] implement `toBehind`
+- [ ] implement `toFront`
+  * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
+- [ ] add a member function `toFrontOfSiblings`
+- [ ] have minimisation hide child windows instead of minimising them
+- [ ] investigate and fix always on top related minimisation bugs on windows
+- [ ] add recursive hide
+  * create some abstraction over the hiding code and minimisation code probably
+- [ ] remove automatic skip taskbar code from macOS and linux implementations
+- [ ] that's it?
