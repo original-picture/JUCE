@@ -1259,7 +1259,7 @@ public:
 
     void resignKeyWindow()
     {
-        if (isInherentlyAlwaysOnTop() && (topLevelParentPeer != nullptr) && ! isAncestrallyAlwaysOnTop())
+        if (isInherentlyAlwaysOnTop() && (topLevelParentPeer != nullptr) && ! isAlwaysOnTopByAncestor())
         {                                            // workaround. If we don't do this, repeated alt+tabbing on and off of an always on top child with a not always on top parent
             setAlwaysOnTopWithoutSettingFlag (true); // will cause the always on top parent to disappear (which should never happen)
         }

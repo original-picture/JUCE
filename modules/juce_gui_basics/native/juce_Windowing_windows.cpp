@@ -1718,7 +1718,8 @@ public:
             SetWindowLong(this->hwnd, GWL_EXSTYLE, existingWindowFlags);
         }
 
-
+        if (shouldBeMinimised != isMinimised())
+            ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
     }
 
     bool isActuallyMinimised() const

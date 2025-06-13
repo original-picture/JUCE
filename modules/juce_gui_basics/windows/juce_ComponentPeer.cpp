@@ -234,22 +234,22 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
         }
     }
 
-    // there is no flag member variable for isAncestrallyAlwaysOnTop
+    // there is no flag member variable for isAlwaysOnTopByAncestor
     // an always on top ancestor is checked for recursively each time, without any caching
 }
 
 bool ComponentPeer::isAlwaysOnTop() const noexcept
-{          // short circuit evaluation allows us to avoid calling isAncestrallyAlwaysOnTop() if we don't have to
-    return isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop();
-                                        // indirect recursion (isAncestrallyAlwaysOnTop() can call isAlwaysOnTop())
+{          // short circuit evaluation allows us to avoid calling isAlwaysOnTopByAncestor() if we don't have to
+    return isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor();
+                                        // indirect recursion (isAlwaysOnTopByAncestor() can call isAlwaysOnTop())
 }
 
-bool ComponentPeer::isAncestrallyAlwaysOnTop() const noexcept
+bool ComponentPeer::isAlwaysOnTopByAncestor() const noexcept
 {
 
     if(topLevelParentPeer != nullptr)
     {
-        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAncestrallyAlwaysOnTop())
+        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAlwaysOnTopByAncestor())
     }
     else
     {
@@ -681,7 +681,7 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
                                                             // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
     #else
         // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
-        setMinimisedWithoutSettingFlag(shouldBeMinimised);
+        // setMinimisedWithoutSettingFlag(shouldBeMinimised);
         for (ComponentPeer* peer : topLevelChildPeerList)
         {
 
@@ -704,6 +704,21 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
     if (shouldBeMinimised)
         setMinimisedWithoutSettingFlag (shouldBeMinimised);
 }
+
+void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
+{
+    if (! shouldBeVisible)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
+        setMinimisedWithoutSettingFlag (shouldBeVisible); // and postorder if we're minimising it.
+
+    for (auto* peer : topLevelChildPeerList)
+    {                                                                      // don't accidentally show an inherently hidden window
+        peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible || peer->isInherentlyHidden());
+    }
+
+    if (shouldBeVisible)
+        setMinimisedWithoutSettingFlag (shouldBeVisible);
+}
+
 
 bool ComponentPeer::isMinimised() const noexcept
 {          // short circuit evaluation allows us to avoid calling isAncestrallyMinimised() if we don't have to

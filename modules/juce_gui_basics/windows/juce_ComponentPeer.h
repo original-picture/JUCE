@@ -261,6 +261,10 @@ public:
     */
     bool isInherentlyMinimised() const noexcept;
 
+    bool isInherentlyHidden() const noexcept;
+
+    bool isHiddenByAncestor() const noexcept;
+
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;
 
@@ -355,20 +359,20 @@ public:
     bool setAlwaysOnTop (bool alwaysOnTop);
 
     /** Returns true if this peer is set to always stay in front of other windows on the desktop.
-        Equivalent to isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop()
-        @see setAlwaysOnTop, isAncestrallyAlwaysOnTop, isInherentlyAlwaysOnTop
+        Equivalent to isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor()
+        @see setAlwaysOnTop, isAlwaysOnTopByAncestor, isInherentlyAlwaysOnTop
     */
     bool isAlwaysOnTop() const noexcept;
 
     /** Returns true if this peer has ancestors that are always on top.
-        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
         @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
     */
-    bool isAncestrallyAlwaysOnTop() const noexcept;
+    bool isAlwaysOnTopByAncestor() const noexcept;
 
     /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
-        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
-        @see setAlwaysOnTop, isAlwaysOnTop, isAncestrallyAlwaysOnTop
+        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, isAlwaysOnTopByAncestor
     */
     bool isInherentlyAlwaysOnTop() const noexcept;
 
@@ -672,6 +676,8 @@ protected:
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
 
+    void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
+
     Component& component;
     const int styleFlags;
     Rectangle<int> lastNonFullscreenBounds;
@@ -687,6 +693,7 @@ protected:
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
                                                   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
     bool internalIsInherentlyMinimised = false;
+    bool internalIsInherentlyVisible   = true;
 
 private:
     //==============================================================================
