@@ -68,7 +68,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     so I could sort of make an argument that this complexity is justified because it's just exposing complexity inherent to the underlying APIs, not inventing new complexity
     * but then again, if child peers were added, JUCE would then have **three** distinct systems hierarchical systems for organizing GUI elements (child components, `addToDesktop`/`nativeWindowToAttachTo`, and child peers)
       * buuuuuut on the other hand you could argue that it's not really that bad because, again, there probably aren't all that many people using `nativeWindowToAttachTo`, so it's more like 2.5 distinct systems
-- [ ] make `addChildPeer` fail if the peer has already been attached to a native parent via `addToDesktop`?
+- [X] make `addChildPeer` fail if the peer has already been attached to a native parent via `addToDesktop`?
 
 - [ ] don't allow calling `toBehind` with an always on top window and a *not* always on top window
  * copy component's behavior 
@@ -213,8 +213,13 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
 - [ ] add a member function `toFrontOfSiblings`
 - [ ] have minimisation hide child windows instead of minimising them
+- [ ] an internal `isInherentlyHidden` attribute is necessary
 - [ ] investigate and fix always on top related minimisation bugs on windows
 - [ ] add recursive hide
   * create some abstraction over the hiding code and minimisation code probably
 - [ ] remove automatic skip taskbar code from macOS and linux implementations
+- [ ] finish documentation
 - [ ] that's it?
+
+# Anticipated FAQ
+### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

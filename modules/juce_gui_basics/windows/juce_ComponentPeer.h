@@ -663,10 +663,10 @@ protected:
     */
     virtual void clearNativeTopLevelParent() = 0;
 
-    // called from derived classes
+    // called in the destructors of derived classes (HWNDComponentPeer and friends)
     // we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
     // and by the time we reach ~ComponentPeer it's already too late
-    // also it calls virtual functions and obviously those can't be called from the destructor of the base class
+    // also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
     void doTopLevelChildPeerCleanup();
 
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
@@ -681,6 +681,7 @@ protected:
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
 
+    virtual bool isAttachedToAnotherWindow() = 0;
     ComponentPeer* topLevelParentPeer = nullptr;
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?

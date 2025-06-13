@@ -1528,6 +1528,11 @@ public:
         return {};
     }
 
+    bool isAttachedToAnotherWindow() override
+    {
+        return ! viewGroupIsWindow;
+    }
+
     bool setAlwaysOnTopWithoutSettingFlag (bool /*alwaysOnTop*/) override
     {
         // TODO

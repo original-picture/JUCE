@@ -269,7 +269,18 @@ int ComponentPeer::getNumTopLevelChildPeers() const noexcept
 
 bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 {
+    jassert(! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert(! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+
+                                                  // Long story short, nativeWindowToAttachTo and addTopLevelChildPeer map to different systems of the underlying OS-specific APIs
+                                                  // For example, nativeWindowToAttachTo creates a win32 *child* window, while addTopLevelChildPeer creates a win32 *owned* window. MacOS and linux have analogous constructs
+                                                  // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
+                                                  // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
+                                                  // then you probably want the functionality of one of them, but just don't know which one
+                                                  // I would recommend you read up on the underlying OS-specific systems and their behaviors so that you can determine which one is right for your use case
+
     jassert (this != &child); // adding a peer to itself!?
+
 
     if (child.topLevelParentPeer != this) // TODO: add actual cycle detection here?
     {
@@ -669,7 +680,12 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
                                                             // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
                                                             // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
     #else
-        setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+        // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+        setMinimisedWithoutSettingFlag(shouldBeMinimised);
+        for (ComponentPeer* peer : topLevelChildPeerList)
+        {
+
+        }
     #endif
 
     internalIsInherentlyMinimised = shouldBeMinimised;

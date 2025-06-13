@@ -599,6 +599,11 @@ public:
         return (getStyleFlags() & windowHasTitleBar) != 0;
     }
 
+    bool isAttachedToAnotherWindow() override
+    {
+        return isSharedWindow;
+    }
+
     bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) override
     {
         if (! isSharedWindow)

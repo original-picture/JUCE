@@ -1815,6 +1815,11 @@ public:
         return findPhysicalBorderSize().value_or (BorderSize<int>{}).multipliedBy (1.0 / scaleFactor);
     }
 
+    bool isAttachedToAnotherWindow() override
+    {
+        return parentToAddTo != nullptr;
+    }
+
     bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) override
     {
         const bool oldDeactivate = shouldDeactivateTitleBar;

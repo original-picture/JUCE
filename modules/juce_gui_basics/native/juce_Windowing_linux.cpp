@@ -342,6 +342,11 @@ public:
 
     void setAlpha (float) override {}
 
+    bool isAttachedToAnotherWindow() override
+    {
+        return parentWindow != nullptr;
+    }
+
     bool setAlwaysOnTopWithoutSettingFlag (bool shouldBeAlwaysOnTop) override {
         return XWindowSystem::getInstance()->setAlwaysOnTop(this->windowH, shouldBeAlwaysOnTop);
     }
