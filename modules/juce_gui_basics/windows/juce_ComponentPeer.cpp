@@ -525,6 +525,15 @@ void ComponentPeer::dismissPendingTextInput()
 void ComponentPeer::handleBroughtToFront()
 {
     component.internalBroughtToFront();
+
+    if (topLevelParentPeer != nullptr)
+    {
+        auto indexOfThis = topLevelParentPeer->topLevelChildPeerList.indexOf (this);
+        jassert(indexOfThis != -1);
+
+        topLevelParentPeer->topLevelChildPeerList.remove (indexOfThis);
+        topLevelParentPeer->insertIntoTopLevelChildPeerList (this, -1); // -1 means insert at the back of the array
+    }
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept
@@ -586,18 +595,7 @@ void ComponentPeer::handleFocusGain()
     else
     {
         if (! component.isCurrentlyBlockedByAnotherModalComponent())
-        {
             component.grabKeyboardFocus();
-
-            if (topLevelParentPeer != nullptr)
-            {
-                auto indexOfThis = topLevelParentPeer->topLevelChildPeerList.indexOf (this);
-                jassert(indexOfThis != -1);
-
-                topLevelParentPeer->topLevelChildPeerList.remove (indexOfThis);
-                topLevelParentPeer->insertIntoTopLevelChildPeerList (this, -1); // -1 means insert at the back of the array
-            }
-        }
         else
             ModalComponentManager::getInstance()->bringModalComponentsToFront();
     }

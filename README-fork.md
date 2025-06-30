@@ -224,9 +224,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] remove automatic skip taskbar code from macOS and linux implementations
 - [ ] finish documentation
 - [ ] figure out if the interaction between hiding and minimising causes issues
-- [X] figure out the difference between activation and focus on windows and find a way to make the child peer list rearrange itself when a peer is brought to the front with as little code duplication as possible
-  * `grabFocus` is called by `handleFocusGain` if the component in question *wasn't* the last focused component
-  * so put the child list shuffling code in `grabFocus` in the body of the same if statement that will (indirectly) call `grabFocus`
+- [X] rearrange child peer lists when a window is brought to front
 - [ ] that's it?
 
 # Anticipated FAQ
