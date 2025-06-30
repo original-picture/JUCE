@@ -693,7 +693,7 @@ protected:
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
                                                   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
     bool internalIsInherentlyMinimised = false;
-    bool internalIsInherentlyVisible   = true;
+    bool internalIsInherentlyHidden    = false;
 
 private:
     //==============================================================================
@@ -737,6 +737,12 @@ private:
      * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.
     */
     void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
+
+    /**
+     *
+     * @param childToBe
+     */
+    void insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder);
 
     /**
      *

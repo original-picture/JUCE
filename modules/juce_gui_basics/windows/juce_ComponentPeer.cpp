@@ -238,6 +238,36 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
     // an always on top ancestor is checked for recursively each time, without any caching
 }
 
+void ComponentPeer::insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder)
+{
+    if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
+        zOrder = topLevelChildPeerList.size();
+
+    if (childToBe->isAlwaysOnTop())
+    {
+        while (zOrder < topLevelChildPeerList.size())
+        {
+            if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
+                break;
+
+            ++zOrder;
+        }
+    }
+    else
+    {
+        while (zOrder > 0)
+        {
+            if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
+                break;
+
+            --zOrder;
+        }
+    }
+
+    topLevelChildPeerList.insert (zOrder, childToBe);
+}
+
+
 bool ComponentPeer::isAlwaysOnTop() const noexcept
 {          // short circuit evaluation allows us to avoid calling isAlwaysOnTopByAncestor() if we don't have to
     return isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor();
@@ -290,31 +320,7 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
 
-        if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
-            zOrder = topLevelChildPeerList.size();
-
-        if (child.isAlwaysOnTop())
-        {
-            while (zOrder < topLevelChildPeerList.size())
-            {
-                if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
-                    break;
-
-                ++zOrder;
-            }
-        }
-        else
-        {
-            while (zOrder > 0)
-            {
-                if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
-                    break;
-
-                --zOrder;
-            }
-        }
-
-        topLevelChildPeerList.insert (zOrder, &child);
+        insertIntoTopLevelChildPeerList(&child, zOrder);
 
         child.topLevelParentPeer = this;
 
@@ -580,7 +586,18 @@ void ComponentPeer::handleFocusGain()
     else
     {
         if (! component.isCurrentlyBlockedByAnotherModalComponent())
+        {
             component.grabKeyboardFocus();
+
+            if (topLevelParentPeer != nullptr)
+            {
+                auto indexOfThis = topLevelParentPeer->topLevelChildPeerList.indexOf (this);
+                jassert(indexOfThis != -1);
+
+                topLevelParentPeer->topLevelChildPeerList.remove (indexOfThis);
+                topLevelParentPeer->insertIntoTopLevelChildPeerList (this, -1); // -1 means insert at the back of the array
+            }
+        }
         else
             ModalComponentManager::getInstance()->bringModalComponentsToFront();
     }
@@ -707,15 +724,15 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
-    if (! shouldBeVisible)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
-        setMinimisedWithoutSettingFlag (shouldBeVisible); // and postorder if we're minimising it.
+    if (shouldBeVisible)                                  // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
+        setMinimisedWithoutSettingFlag (shouldBeVisible); // and postorder if we're hiding it.
 
     for (auto* peer : topLevelChildPeerList)
-    {                                                                      // don't accidentally show an inherently hidden window
-        peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible || peer->isInherentlyHidden());
+    {                                                                     // don't accidentally show an inherently hidden window
+        peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeVisible || peer->isInherentlyHidden());
     }
 
-    if (shouldBeVisible)
+    if (! shouldBeVisible)
         setMinimisedWithoutSettingFlag (shouldBeVisible);
 }
 
@@ -742,6 +759,23 @@ bool ComponentPeer::isAncestrallyMinimised() const noexcept
 bool ComponentPeer::isInherentlyMinimised() const noexcept
 {
     return internalIsInherentlyMinimised;
+}
+
+bool ComponentPeer::isInherentlyHidden() const noexcept
+{
+    return internalIsInherentlyHidden;
+}
+
+bool ComponentPeer::isHiddenByAncestor() const noexcept
+{
+    if(topLevelParentPeer != nullptr)
+    {
+        return topLevelParentPeer->isAlwaysOnTop() || topLevelParentPeer->isHiddenByAncestor();
+    }
+    else
+    {
+        return false;
+    }
 }
 
 //==============================================================================

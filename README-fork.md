@@ -181,6 +181,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] on windows, child windows render black, white, or transparent after being restored
   * also attempting to minimise the restored window doesn't minimise it, but does fix the incorrect rendering
   * also moving the window fixes the rendering
+- [X] toggling always on top can switch the z-order of child windows (because the order in which `setAlwaysOnTop` is called on children is arbitrary)
+  * fixed by extracting the insertion code from `addTopLevelChildPeer` into a private helper function and calling it from `ComponentPeer::handleFocusGained`
+    - [ ] was this a valid fix though? Does `handleFocusGained` getting called imply 
+
 
 
 # Changes to existing parts of JUCE
@@ -219,6 +223,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * create some abstraction over the hiding code and minimisation code probably
 - [ ] remove automatic skip taskbar code from macOS and linux implementations
 - [ ] finish documentation
+- [ ] figure out if the interaction between hiding and minimising causes issues
+- [X] figure out the difference between activation and focus on windows and find a way to make the child peer list rearrange itself when a peer is brought to the front with as little code duplication as possible
+  * `grabFocus` is called by `handleFocusGain` if the component in question *wasn't* the last focused component
+  * so put the child list shuffling code in `grabFocus` in the body of the same if statement that will (indirectly) call `grabFocus`
 - [ ] that's it?
 
 # Anticipated FAQ
