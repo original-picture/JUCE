@@ -526,13 +526,17 @@ void ComponentPeer::handleBroughtToFront()
 {
     component.internalBroughtToFront();
 
-    if (topLevelParentPeer != nullptr)
-    {
-        auto indexOfThis = topLevelParentPeer->topLevelChildPeerList.indexOf (this);
-        jassert(indexOfThis != -1);
+    auto currentPeer = this;
 
-        topLevelParentPeer->topLevelChildPeerList.remove (indexOfThis);
-        topLevelParentPeer->insertIntoTopLevelChildPeerList (this, -1); // -1 means insert at the back of the array
+    while (auto currentPeerParent = currentPeer->topLevelParentPeer) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary
+    {
+        auto indexOfCurrentPeerInParentPeerList = currentPeerParent->topLevelChildPeerList.indexOf (currentPeer);
+        jassert(indexOfCurrentPeerInParentPeerList != -1);
+
+        currentPeerParent->topLevelChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
+        currentPeerParent->insertIntoTopLevelChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
+
+        currentPeer = currentPeer->topLevelParentPeer;
     }
 }
 

@@ -382,12 +382,14 @@ public:
         @see getChildren, getChildComponent, getIndexOfChildComponent
     */
     ComponentPeer* getTopLevelChildPeer (int index) const noexcept;
-/*
+
+    const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return topLevelChildPeerList; }
+
+        /*
 
         int getIndexOfTopLevelChildPeer(const ComponentPeer* child) const noexcept;
 
 
-        const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return childPeerList; }
 
         Component* findChildWithID (uint32 componentID) const noexcept;
 */

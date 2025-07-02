@@ -222,6 +222,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] add recursive hide
   * create some abstraction over the hiding code and minimisation code probably
 - [ ] remove automatic skip taskbar code from macOS and linux implementations
+- [ ] on all platforms except macOS, make it illegal to minimise a child window that doesn't show on the taskbar 
 - [ ] finish documentation
 - [ ] figure out if the interaction between hiding and minimising causes issues
 - [X] rearrange child peer lists when a window is brought to front
