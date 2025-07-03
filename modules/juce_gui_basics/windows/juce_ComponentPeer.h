@@ -86,7 +86,13 @@ public:
                                                                            (macOS and iOS only). */
         windowIsSemiTransparent                         = (1 << 30),  /**< Not intended for public use - makes a window transparent. */
 
-        windowSkipsTaskbarNormalTitleBar                = (1 << 31)
+        windowUsesNormalTaskbarWhenSkippingTaskbar      = (1 << 31)   /**< Only used on windows.
+                                                                           If this flag is used and windowAppearsOnTaskbar is not set, the WS_EX_TOOLWINDOW style will not be used.
+                                                                           Instead, WS_EX_APPWINDOW will be omitted, causing the window to skip the taskbar while still having the usual window decorations.
+                                                                           Ignored if windowAppearsOnTaskbar is set.
+                                                                           Note that windows seems to force the first created window onto the toolbar if it doesn't have the WS_EX_TOOLWINDOW style, even if WS_EX_APPWINDOW is not specified.
+                                                                           This is usually not an issue in practice, because windowAppearsOnTaskbar is typically only unset for secondary tool windows,
+                                                                           while the main window of the application almost always *does* include windowAppearsOnTaskbar */
 
     };
 

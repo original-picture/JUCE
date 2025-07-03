@@ -1699,7 +1699,7 @@ public:
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
-        if ((styleFlags & ComponentPeer::windowSkipsTaskbarNormalTitleBar) != 0 || (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0)
+        if ((styleFlags & ComponentPeer::windowUsesNormalTaskbarWhenSkippingTaskbar) != 0 || (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0)
         {
             auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
 
@@ -1710,7 +1710,7 @@ public:
             }
             else
             {
-                if ((styleFlags & windowSkipsTaskbarNormalTitleBar) != 0)
+                if ((styleFlags & windowUsesNormalTaskbarWhenSkippingTaskbar) != 0)
                     existingWindowFlags &= ~WS_EX_APPWINDOW;
                 else // (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0
                     existingWindowFlags |= WS_EX_TOOLWINDOW;
@@ -2477,7 +2477,7 @@ private:
         const auto hasMin = (styleFlags & windowHasMinimiseButton) != 0;
         const auto hasMax = (styleFlags & windowHasMaximiseButton) != 0;
         const auto appearsOnTaskbar = (styleFlags & windowAppearsOnTaskbar) != 0;
-        const auto skipsTaskbarNormalTitleBar = (styleFlags & windowSkipsTaskbarNormalTitleBar) != 0;
+        const auto skipsTaskbarNormalTitleBar = (styleFlags & windowUsesNormalTaskbarWhenSkippingTaskbar) != 0;
         const auto resizable = (styleFlags & windowIsResizable) != 0;
         const auto usesDropShadow = windowUsesNativeShadow();
 
@@ -2504,10 +2504,10 @@ private:
                 type |= WS_POPUP;
             }
 
-            if (skipsTaskbarNormalTitleBar)
-                exstyle &= ~WS_EX_APPWINDOW;
-            else
+            if (! (appearsOnTaskbar && skipsTaskbarNormalTitleBar))
+            {
                 exstyle |= appearsOnTaskbar ? WS_EX_APPWINDOW : WS_EX_TOOLWINDOW;
+            }
         }
 
         hwnd = CreateWindowEx (exstyle, WindowClassHolder::getInstance()->getWindowClassName(),
