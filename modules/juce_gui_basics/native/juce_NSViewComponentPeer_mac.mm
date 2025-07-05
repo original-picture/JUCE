@@ -466,12 +466,12 @@ public:
                 [window deminiaturize: nil];
         }
     }
-/*
+
     bool isMinimised() const override
     {
         return [window isMiniaturized];
     }
-*/
+
     bool isShowing() const override
     {
         return [window isVisible] && ! isMinimised();

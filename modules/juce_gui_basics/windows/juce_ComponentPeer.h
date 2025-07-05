@@ -86,7 +86,7 @@ public:
                                                                            (macOS and iOS only). */
         windowIsSemiTransparent                         = (1 << 30),  /**< Not intended for public use - makes a window transparent. */
 
-        windowUsesNormalTaskbarWhenSkippingTaskbar      = (1 << 31)   /**< Only used on windows.
+        windowUsesNormalTitlebarWhenSkippingTaskbar      = (1 << 31)   /**< Only used on windows.
                                                                            If this flag is used and windowAppearsOnTaskbar is not set, the WS_EX_TOOLWINDOW style will not be used.
                                                                            Instead, WS_EX_APPWINDOW will be omitted, causing the window to skip the taskbar while still having the usual window decorations.
                                                                            Ignored if windowAppearsOnTaskbar is set.
@@ -177,7 +177,7 @@ public:
     virtual void* getNativeHandle() const = 0;
 
     /** Shows or hides the window. */
-    virtual void setVisible (bool shouldBeVisible) = 0;
+    void setVisible (bool shouldBeVisible);
 
     /** Changes the title of the window. */
     virtual void setTitle (const String& title) = 0;
@@ -250,10 +250,9 @@ public:
     void setMinimised (bool shouldBeMinimised);
 
     /** Returns true if this peer is minimized.
-        Equivalent to isInherentlyMinimised() || isAncestrallyMinimised()
-        @see setMinimised, isAncestrallyMinimised, isInherentlyMinimised
+        @see setMinimised
     */
-    bool isMinimised() const noexcept;
+    virtual bool isMinimised() const = 0;
 
     /** Returns true if this peer has ancestors that are minimised.
         Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
@@ -684,6 +683,7 @@ protected:
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
 
+    virtual void setVisibleWithoutSettingFlag (bool shouldBeVisible) = 0;
     void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
 
     Component& component;
@@ -699,8 +699,7 @@ protected:
     ComponentPeer* topLevelParentPeer = nullptr;
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
-    bool internalIsInherentlyMinimised = false;
+    bool internalIsInherentlyMinimised = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
     bool internalIsInherentlyHidden    = false;
 
 private:

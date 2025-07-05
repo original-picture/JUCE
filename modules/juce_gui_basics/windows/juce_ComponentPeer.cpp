@@ -675,39 +675,7 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
-    if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
-    {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
-        std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
-
-        { // limit the scope of peer
-            ComponentPeer* peer = this;
-            while (((peer = peer->topLevelParentPeer) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
-                peersToProcess.push (peer);
-        }
-
-        while (! peersToProcess.empty()) // then you pop each one off the stack and deminimise it.
-        {
-            auto* peer = peersToProcess.top();
-            peersToProcess.pop();
-
-            peer->setMinimised (false);
-        }
-    }
-
-    #ifdef __APPLE__
-        setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
-                                                            // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
-                                                            // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
-    #else
-        // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
-        // setMinimisedWithoutSettingFlag(shouldBeMinimised);
-        for (ComponentPeer* peer : topLevelChildPeerList)
-        {
-
-        }
-    #endif
-
-    internalIsInherentlyMinimised = shouldBeMinimised;
+    setMinimisedWithoutSettingFlag (shouldBeMinimised);
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -727,22 +695,15 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
     if (shouldBeVisible)                                  // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
-        setMinimisedWithoutSettingFlag (shouldBeVisible); // and postorder if we're hiding it.
+        setVisibleWithoutSettingFlag (shouldBeVisible);   // and postorder if we're hiding it.
 
     for (auto* peer : topLevelChildPeerList)
     {                                                                     // don't accidentally show an inherently hidden window
-        peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeVisible || peer->isInherentlyHidden());
+        peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
     }
 
     if (! shouldBeVisible)
-        setMinimisedWithoutSettingFlag (shouldBeVisible);
-}
-
-
-bool ComponentPeer::isMinimised() const noexcept
-{          // short circuit evaluation allows us to avoid calling isAncestrallyMinimised() if we don't have to
-    return isInherentlyMinimised() || isAncestrallyMinimised();
-                                      // indirect recursion (isAncestrallyMinimised() can call isMinimised())
+        setVisibleWithoutSettingFlag (shouldBeVisible);
 }
 
 bool ComponentPeer::isAncestrallyMinimised() const noexcept
@@ -920,6 +881,13 @@ bool ComponentPeer::handleDragDrop (const ComponentPeer::DragInfo& info)
 void ComponentPeer::handleUserClosingWindow()
 {
     component.userTriedToCloseWindow();
+}
+
+void ComponentPeer::setVisible (bool shouldBeVisible)
+{
+    setVisibleWithoutSettingFlag (shouldBeVisible);
+
+    internalIsInherentlyHidden = ! shouldBeVisible;
 }
 
 bool ComponentPeer::setDocumentEditedStatus (bool)

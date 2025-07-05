@@ -1500,7 +1500,7 @@ public:
     auto getHWND() const { return hwnd; }
     void* getNativeHandle() const override    { return hwnd; }
 
-    void setVisible (bool shouldBeVisible) override
+    void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
@@ -1699,7 +1699,7 @@ public:
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
-        if ((styleFlags & ComponentPeer::windowUsesNormalTaskbarWhenSkippingTaskbar) != 0 || (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0)
+        if ((styleFlags & ComponentPeer::windowUsesNormalTitlebarWhenSkippingTaskbar) != 0 || (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0)
         {
             auto existingWindowFlags = GetWindowLong(this->hwnd, GWL_EXSTYLE);
 
@@ -1710,7 +1710,7 @@ public:
             }
             else
             {
-                if ((styleFlags & windowUsesNormalTaskbarWhenSkippingTaskbar) != 0)
+                if ((styleFlags & windowUsesNormalTitlebarWhenSkippingTaskbar) != 0)
                     existingWindowFlags &= ~WS_EX_APPWINDOW;
                 else // (styleFlags & ComponentPeer::windowAppearsOnTaskbar) == 0
                     existingWindowFlags |= WS_EX_TOOLWINDOW;
@@ -1722,7 +1722,7 @@ public:
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
     }
 
-    bool isActuallyMinimised() const
+    bool isMinimised() const override
     {
         WINDOWPLACEMENT wp;
         wp.length = sizeof (WINDOWPLACEMENT);
@@ -2477,7 +2477,7 @@ private:
         const auto hasMin = (styleFlags & windowHasMinimiseButton) != 0;
         const auto hasMax = (styleFlags & windowHasMaximiseButton) != 0;
         const auto appearsOnTaskbar = (styleFlags & windowAppearsOnTaskbar) != 0;
-        const auto skipsTaskbarNormalTitleBar = (styleFlags & windowUsesNormalTaskbarWhenSkippingTaskbar) != 0;
+        const auto skipsTaskbarNormalTitleBar = (styleFlags & windowUsesNormalTitlebarWhenSkippingTaskbar) != 0;
         const auto resizable = (styleFlags & windowIsResizable) != 0;
         const auto usesDropShadow = windowUsesNativeShadow();
 
