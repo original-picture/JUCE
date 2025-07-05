@@ -192,7 +192,7 @@ public:
         return { "Software Renderer" };
     }
 
-    void setVisible (bool shouldBeVisible) override
+    void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         XWindowSystem::getInstance()->setVisible (windowH, shouldBeVisible);
     }
@@ -220,10 +220,10 @@ public:
         }
     }
 
-   /* bool isMinimised() const override
+    bool isMinimised() const override
     {
         return XWindowSystem::getInstance()->isMinimised (windowH);
-    }*/
+    }
 
     bool isShowing() const override
     {
@@ -354,7 +354,7 @@ public:
 
     bool isAttachedToAnotherWindow() override
     {
-        return parentWindow != nullptr;
+        return parentWindow != 0;
     }
 
     bool setAlwaysOnTopWithoutSettingFlag (bool shouldBeAlwaysOnTop) override {
