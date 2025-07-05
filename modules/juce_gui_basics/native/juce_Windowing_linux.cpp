@@ -354,7 +354,7 @@ public:
 
     bool isAttachedToAnotherWindow() override
     {
-        return parentWindow != 0;
+        return parentWindow != 0;   // I think this is the right way to check this
     }
 
     bool setAlwaysOnTopWithoutSettingFlag (bool shouldBeAlwaysOnTop) override {
