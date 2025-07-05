@@ -234,22 +234,52 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
         }
     }
 
-    // there is no flag member variable for isAncestrallyAlwaysOnTop
+    // there is no flag member variable for isAlwaysOnTopByAncestor
     // an always on top ancestor is checked for recursively each time, without any caching
 }
 
-bool ComponentPeer::isAlwaysOnTop() const noexcept
-{          // short circuit evaluation allows us to avoid calling isAncestrallyAlwaysOnTop() if we don't have to
-    return isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop();
-                                        // indirect recursion (isAncestrallyAlwaysOnTop() can call isAlwaysOnTop())
+void ComponentPeer::insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder)
+{
+    if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
+        zOrder = topLevelChildPeerList.size();
+
+    if (childToBe->isAlwaysOnTop())
+    {
+        while (zOrder < topLevelChildPeerList.size())
+        {
+            if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
+                break;
+
+            ++zOrder;
+        }
+    }
+    else
+    {
+        while (zOrder > 0)
+        {
+            if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
+                break;
+
+            --zOrder;
+        }
+    }
+
+    topLevelChildPeerList.insert (zOrder, childToBe);
 }
 
-bool ComponentPeer::isAncestrallyAlwaysOnTop() const noexcept
+
+bool ComponentPeer::isAlwaysOnTop() const noexcept
+{          // short circuit evaluation allows us to avoid calling isAlwaysOnTopByAncestor() if we don't have to
+    return isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor();
+                                        // indirect recursion (isAlwaysOnTopByAncestor() can call isAlwaysOnTop())
+}
+
+bool ComponentPeer::isAlwaysOnTopByAncestor() const noexcept
 {
 
     if(topLevelParentPeer != nullptr)
     {
-        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAncestrallyAlwaysOnTop())
+        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAlwaysOnTopByAncestor())
     }
     else
     {
@@ -269,7 +299,18 @@ int ComponentPeer::getNumTopLevelChildPeers() const noexcept
 
 bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 {
+    jassert(! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert(! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+
+                                                  // Long story short, nativeWindowToAttachTo and addTopLevelChildPeer map to different systems of the underlying OS-specific APIs
+                                                  // For example, nativeWindowToAttachTo creates a win32 *child* window, while addTopLevelChildPeer creates a win32 *owned* window. MacOS and linux have analogous constructs
+                                                  // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
+                                                  // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
+                                                  // then you probably want the functionality of one of them, but just don't know which one
+                                                  // I would recommend you read up on the underlying OS-specific systems and their behaviors so that you can determine which one is right for your use case
+
     jassert (this != &child); // adding a peer to itself!?
+
 
     if (child.topLevelParentPeer != this) // TODO: add actual cycle detection here?
     {
@@ -279,31 +320,7 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
 
-        if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
-            zOrder = topLevelChildPeerList.size();
-
-        if (child.isAlwaysOnTop())
-        {
-            while (zOrder < topLevelChildPeerList.size())
-            {
-                if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
-                    break;
-
-                ++zOrder;
-            }
-        }
-        else
-        {
-            while (zOrder > 0)
-            {
-                if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
-                    break;
-
-                --zOrder;
-            }
-        }
-
-        topLevelChildPeerList.insert (zOrder, &child);
+        insertIntoTopLevelChildPeerList(&child, zOrder);
 
         child.topLevelParentPeer = this;
 
@@ -508,6 +525,19 @@ void ComponentPeer::dismissPendingTextInput()
 void ComponentPeer::handleBroughtToFront()
 {
     component.internalBroughtToFront();
+
+    auto currentPeer = this;
+
+    while (auto currentPeerParent = currentPeer->topLevelParentPeer) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary
+    {
+        auto indexOfCurrentPeerInParentPeerList = currentPeerParent->topLevelChildPeerList.indexOf (currentPeer);
+        jassert(indexOfCurrentPeerInParentPeerList != -1);
+
+        currentPeerParent->topLevelChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
+        currentPeerParent->insertIntoTopLevelChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
+
+        currentPeer = currentPeer->topLevelParentPeer;
+    }
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept
@@ -651,27 +681,41 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
 
         { // limit the scope of peer
             ComponentPeer* peer = this;
-            while (((peer = peer->topLevelParentPeer) != nullptr) && /*!*/ peer->isMinimised()) // Note that this peer does NOT get pushed to the stack. this peer gets processed separately below
-                peersToProcess.push(peer);
+            while (((peer = peer->topLevelParentPeer) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
+                peersToProcess.push (peer);
         }
 
-        while (! peersToProcess.empty())        // then you pop each one off the stack and deminimise it.
+        while (! peersToProcess.empty()) // then you pop each one off the stack and deminimise it.
         {
             auto* peer = peersToProcess.top();
-            peer->setMinimised(false);
-
             peersToProcess.pop();
+
+            peer->setMinimised (false);
         }
     }
 
-    /*internalIsInherentlyMinimised = shouldBeMinimised;
-    setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);*/
+    if (! shouldBeMinimised) // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
+    {                        // and postorder if we're minimising it.
+        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+    }
 
     #ifdef __APPLE__
-        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+        setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
+                                                            // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
+                                                            // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
     #else
-        setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+        // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
+        // setMinimisedWithoutSettingFlag(shouldBeMinimised);
+        for (ComponentPeer* peer : topLevelChildPeerList)
+        {
+            peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING
+        }
     #endif
+
+    if (shouldBeMinimised)
+    {
+        setMinimisedWithoutSettingFlag (shouldBeMinimised);
+    }
 
     internalIsInherentlyMinimised = shouldBeMinimised;
 }
@@ -690,10 +734,18 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
         setMinimisedWithoutSettingFlag (shouldBeMinimised);
 }
 
-bool ComponentPeer::isMinimised() const noexcept
-{          // short circuit evaluation allows us to avoid calling isAncestrallyMinimised() if we don't have to
-    return isInherentlyMinimised() || isAncestrallyMinimised();
-                                      // indirect recursion (isAncestrallyMinimised() can call isMinimised())
+void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
+{
+    if (shouldBeVisible)                                  // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
+        setVisibleWithoutSettingFlag (shouldBeVisible);   // and postorder if we're hiding it.
+
+    for (auto* peer : topLevelChildPeerList)
+    {                                                                     // don't accidentally show an inherently hidden window
+        peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
+    }
+
+    if (! shouldBeVisible)
+        setVisibleWithoutSettingFlag (shouldBeVisible);
 }
 
 bool ComponentPeer::isAncestrallyMinimised() const noexcept
@@ -712,6 +764,23 @@ bool ComponentPeer::isAncestrallyMinimised() const noexcept
 bool ComponentPeer::isInherentlyMinimised() const noexcept
 {
     return internalIsInherentlyMinimised;
+}
+
+bool ComponentPeer::isInherentlyHidden() const noexcept
+{
+    return internalIsInherentlyHidden;
+}
+
+bool ComponentPeer::isHiddenByAncestor() const noexcept
+{
+    if(topLevelParentPeer != nullptr)
+    {
+        return topLevelParentPeer->isAlwaysOnTop() || topLevelParentPeer->isHiddenByAncestor();
+    }
+    else
+    {
+        return false;
+    }
 }
 
 //==============================================================================
@@ -854,6 +923,13 @@ bool ComponentPeer::handleDragDrop (const ComponentPeer::DragInfo& info)
 void ComponentPeer::handleUserClosingWindow()
 {
     component.userTriedToCloseWindow();
+}
+
+void ComponentPeer::setVisible (bool shouldBeVisible)
+{
+    setVisibleWithoutSettingFlag (shouldBeVisible);
+
+    internalIsInherentlyHidden = ! shouldBeVisible;
 }
 
 bool ComponentPeer::setDocumentEditedStatus (bool)

@@ -367,6 +367,11 @@ public:
     void setTitle (const String& title) override;
     void setBounds (const Rectangle<int>&, bool isNowFullScreen) override;
 
+    bool isAttachedToAnotherWindow() override
+    {
+        return isSharedWindow;
+    }
+
     void setViewController (UIViewController* newController) override
     {
         jassert (controller == nullptr);

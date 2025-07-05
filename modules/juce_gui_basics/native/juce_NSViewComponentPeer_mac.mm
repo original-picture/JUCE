@@ -466,12 +466,12 @@ public:
                 [window deminiaturize: nil];
         }
     }
-/*
+
     bool isMinimised() const override
     {
         return [window isMiniaturized];
     }
-*/
+
     bool isShowing() const override
     {
         return [window isVisible] && ! isMinimised();
@@ -597,6 +597,11 @@ public:
     bool hasNativeTitleBar() const
     {
         return (getStyleFlags() & windowHasTitleBar) != 0;
+    }
+
+    bool isAttachedToAnotherWindow() override
+    {
+        return isSharedWindow;
     }
 
     bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) override
@@ -1254,7 +1259,7 @@ public:
 
     void resignKeyWindow()
     {
-        if (isInherentlyAlwaysOnTop() && (topLevelParentPeer != nullptr) && ! isAncestrallyAlwaysOnTop())
+        if (isInherentlyAlwaysOnTop() && (topLevelParentPeer != nullptr) && ! isAlwaysOnTopByAncestor())
         {                                            // workaround. If we don't do this, repeated alt+tabbing on and off of an always on top child with a not always on top parent
             setAlwaysOnTopWithoutSettingFlag (true); // will cause the always on top parent to disappear (which should never happen)
         }
@@ -1706,7 +1711,7 @@ public:
             if (! topLevelChildPeerList.isEmpty()) /// !!!! THIS HAS TO HAPPEN BEFORE THE clearNativeTopLevelParent() CALL BELOW
             {                                      /// !!!! IF YOU TRY TO DO IT THE OTHER WAY AROUND, MINIMIZING A WINDOW THAT HAS A PARENT AND CHILDREN WILL CAUSE THE WINDOW'S PARENT TO ERRONEOUSLY MINIMIZE AS WELL
                                                    /// !!!! I have no idea why this happens. Yes, it sucks that things are sequentially coupled like this. Get mad at apple, not me
-                grabFocus(); // this is a fix for a bug where attempting to minimise a child window that also has its own children that is NOT key will fail (it gets spat out and deminimised immediately)
+                grabFocus(); // this is a fix for a bug where attempting to minimise a child window that also has its own children and is NOT key will fail (it gets spat out and deminimised immediately)
                              // for some reason the bug doesn't occur with windows that have no parent or no children
             }
 

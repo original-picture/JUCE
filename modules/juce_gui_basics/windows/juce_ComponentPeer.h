@@ -84,7 +84,15 @@ public:
                                                                            asynchronous Core Graphics drawing operations. Use this if there
                                                                            are issues with regions not being redrawn at the expected time
                                                                            (macOS and iOS only). */
-        windowIsSemiTransparent                         = (1 << 30)   /**< Not intended for public use - makes a window transparent. */
+        windowIsSemiTransparent                         = (1 << 30),  /**< Not intended for public use - makes a window transparent. */
+
+        windowUsesNormalTitlebarWhenSkippingTaskbar      = (1 << 31)   /**< Only used on windows.
+                                                                           If this flag is used and windowAppearsOnTaskbar is not set, the WS_EX_TOOLWINDOW style will not be used.
+                                                                           Instead, WS_EX_APPWINDOW will be omitted, causing the window to skip the taskbar while still having the usual window decorations.
+                                                                           Ignored if windowAppearsOnTaskbar is set.
+                                                                           Note that windows seems to force the first created window onto the toolbar if it doesn't have the WS_EX_TOOLWINDOW style, even if WS_EX_APPWINDOW is not specified.
+                                                                           This is usually not an issue in practice, because windowAppearsOnTaskbar is typically only unset for secondary tool windows,
+                                                                           while the main window of the application almost always *does* include windowAppearsOnTaskbar */
 
     };
 
@@ -169,7 +177,7 @@ public:
     virtual void* getNativeHandle() const = 0;
 
     /** Shows or hides the window. */
-    virtual void setVisible (bool shouldBeVisible) = 0;
+    void setVisible (bool shouldBeVisible);
 
     /** Changes the title of the window. */
     virtual void setTitle (const String& title) = 0;
@@ -242,10 +250,9 @@ public:
     void setMinimised (bool shouldBeMinimised);
 
     /** Returns true if this peer is minimized.
-        Equivalent to isInherentlyMinimised() || isAncestrallyMinimised()
-        @see setMinimised, isAncestrallyMinimised, isInherentlyMinimised
+        @see setMinimised
     */
-    bool isMinimised() const noexcept;
+    virtual bool isMinimised() const = 0;
 
     /** Returns true if this peer has ancestors that are minimised.
         Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
@@ -258,6 +265,10 @@ public:
         @see setMinimised, isMinimised, isAncestrallyMinimised
     */
     bool isInherentlyMinimised() const noexcept;
+
+    bool isInherentlyHidden() const noexcept;
+
+    bool isHiddenByAncestor() const noexcept;
 
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;
@@ -353,20 +364,20 @@ public:
     bool setAlwaysOnTop (bool alwaysOnTop);
 
     /** Returns true if this peer is set to always stay in front of other windows on the desktop.
-        Equivalent to isInherentlyAlwaysOnTop() || isAncestrallyAlwaysOnTop()
-        @see setAlwaysOnTop, isAncestrallyAlwaysOnTop, isInherentlyAlwaysOnTop
+        Equivalent to isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor()
+        @see setAlwaysOnTop, isAlwaysOnTopByAncestor, isInherentlyAlwaysOnTop
     */
     bool isAlwaysOnTop() const noexcept;
 
     /** Returns true if this peer has ancestors that are always on top.
-        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
         @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
     */
-    bool isAncestrallyAlwaysOnTop() const noexcept;
+    bool isAlwaysOnTopByAncestor() const noexcept;
 
     /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
-        Note that isAncestrallyAlwaysOnTop() and isInherentlyAlwaysOnTop() are not mutually exclusive!
-        @see setAlwaysOnTop, isAlwaysOnTop, isAncestrallyAlwaysOnTop
+        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, isAlwaysOnTopByAncestor
     */
     bool isInherentlyAlwaysOnTop() const noexcept;
 
@@ -376,12 +387,14 @@ public:
         @see getChildren, getChildComponent, getIndexOfChildComponent
     */
     ComponentPeer* getTopLevelChildPeer (int index) const noexcept;
-/*
+
+    const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return topLevelChildPeerList; }
+
+        /*
 
         int getIndexOfTopLevelChildPeer(const ComponentPeer* child) const noexcept;
 
 
-        const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return childPeerList; }
 
         Component* findChildWithID (uint32 componentID) const noexcept;
 */
@@ -661,14 +674,17 @@ protected:
     */
     virtual void clearNativeTopLevelParent() = 0;
 
-    // called from derived classes
+    // called in the destructors of derived classes (HWNDComponentPeer and friends)
     // we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
     // and by the time we reach ~ComponentPeer it's already too late
-    // also it calls virtual functions and obviously those can't be called from the destructor of the base class
+    // also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
     void doTopLevelChildPeerCleanup();
 
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
+
+    virtual void setVisibleWithoutSettingFlag (bool shouldBeVisible) = 0;
+    void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
 
     Component& component;
     const int styleFlags;
@@ -679,11 +695,12 @@ protected:
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
 
+    virtual bool isAttachedToAnotherWindow() = 0;
     ComponentPeer* topLevelParentPeer = nullptr;
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-                                                  // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
-    bool internalIsInherentlyMinimised = false;
+    bool internalIsInherentlyMinimised = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
+    bool internalIsInherentlyHidden    = false;
 
 private:
     //==============================================================================
@@ -727,6 +744,12 @@ private:
      * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.
     */
     void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
+
+    /**
+     *
+     * @param childToBe
+     */
+    void insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder);
 
     /**
      *
