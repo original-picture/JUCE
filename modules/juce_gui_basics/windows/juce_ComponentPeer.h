@@ -390,6 +390,20 @@ public:
 
     const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return topLevelChildPeerList; }
 
+    template <typename Callback>
+    void forEachTopLevelAncestorPeerFromThisToRoot (Callback&& callback)
+    {
+        callback (*this); // TODO: maybe add support for early outs
+
+        if (this->topLevelParentPeer != nullptr)
+            this->topLevelParentPeer->forEachTopLevelAncestorPeerFromThisToRoot (std::forward<Callback> (callback));
+    }
+
+    template <typename Callback>
+    void forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback)
+    {
+
+    }
         /*
 
         int getIndexOfTopLevelChildPeer(const ComponentPeer* child) const noexcept;
@@ -699,8 +713,10 @@ protected:
     ComponentPeer* topLevelParentPeer = nullptr;
     Array<ComponentPeer*> topLevelChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-    bool internalIsInherentlyMinimised = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
-    bool internalIsInherentlyHidden    = false;
+    bool internalIsInherentlyMinimised   = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
+    bool internalIsInherentlyHidden      = false;
+    bool inSetMinimisedCall              = false;
+    bool inAncestorSetMinimisedCall();
 
 private:
     //==============================================================================

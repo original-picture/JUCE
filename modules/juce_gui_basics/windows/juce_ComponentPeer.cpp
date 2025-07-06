@@ -675,6 +675,8 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
+    inSetMinimisedCall = true; // very ugly workaround, I know
+
     if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
     {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
         std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
@@ -708,7 +710,8 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
         // setMinimisedWithoutSettingFlag(shouldBeMinimised);
         for (ComponentPeer* peer : topLevelChildPeerList)
         {
-            peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING
+            if (shouldBeMinimised || ! peer->isInherentlyHidden())
+                peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING
         }
     #endif
 
@@ -718,6 +721,8 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     }
 
     internalIsInherentlyMinimised = shouldBeMinimised;
+
+    inSetMinimisedCall = false; // very ugly workaround, I know
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -737,7 +742,7 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
     if (shouldBeVisible)                                  // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
-        setVisibleWithoutSettingFlag (shouldBeVisible);   // and postorder if we're hiding it.
+        setVisibleWithoutSettingFlag (true);   // and postorder if we're hiding it.
 
     for (auto* peer : topLevelChildPeerList)
     {                                                                     // don't accidentally show an inherently hidden window
@@ -745,7 +750,19 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
     }
 
     if (! shouldBeVisible)
-        setVisibleWithoutSettingFlag (shouldBeVisible);
+        setVisibleWithoutSettingFlag (false);
+}
+
+bool ComponentPeer::inAncestorSetMinimisedCall()
+{
+    bool ret = false;
+
+    forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer& peer)
+    {
+        ret = ret || peer.inSetMinimisedCall;
+    });
+
+    return ret;
 }
 
 bool ComponentPeer::isAncestrallyMinimised() const noexcept
@@ -927,9 +944,12 @@ void ComponentPeer::handleUserClosingWindow()
 
 void ComponentPeer::setVisible (bool shouldBeVisible)
 {
-    setVisibleWithoutSettingFlag (shouldBeVisible);
+    // TODO: do the stack walk thing here too
 
-    internalIsInherentlyHidden = ! shouldBeVisible;
+    setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
+
+    if (! inAncestorSetMinimisedCall())
+        internalIsInherentlyHidden = ! shouldBeVisible;
 }
 
 bool ComponentPeer::setDocumentEditedStatus (bool)
