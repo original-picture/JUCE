@@ -187,6 +187,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] on ubuntu, after adding the new recursive hiding code, there's a little flicker when restoring a minimised window from the taskbar
 - [ ] on ubuntu, after unhiding a window with a child, both the parent window and the child window will have a highlighted title bar,
       implying that both have focus??
+- [X] on macOS, if you hide and then unhide a child window, and then grab the parent window, making it key, the system will temporarily forget the parent-child relationship between the two,
+      (the parent window will draw on top of the child, and the child won't have its position offset by its parent's position). 
+      Grabbing the child window again reminds the system of the relationship
+  * fixed by unparenting and reparenting. This workaround is becoming a common theme with the macOS implementation -_-
 
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
@@ -201,6 +205,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 * consider how minimisation will work
 * on win32, minimising an owner window HIDES (not minimises) its owned windows. This means my recursive minimisation code is kind of not in line with the way windows usually does things
   * but also minimisation on windows is literally broken with more than one layer of children. Plus I think making owned windows hide instead of minimise is kind of unintuitive
+* be wary of iterating over child peers and performing an operation that could cause `handleBroughtToFront` to get called.
+  This will lead to the list being reordered, which means some elements could get skipped
 
 # Things to ask the maintainers
 * I've added a protected member `internalIsInherentlyAlwaysOnTop` to `ComponentPeer`, 
@@ -231,7 +237,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] rearrange child peer lists when a window is brought to front
 - [ ] that's it?
 - [ ] remove dead code
-- [ ] make sure all the code conforms to JUCE's style guide 
+- [ ] make sure all the code conforms to JUCE's style guide
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

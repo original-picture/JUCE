@@ -339,7 +339,7 @@ public:
     //==============================================================================
     void* getNativeHandle() const override    { return view; }
 
-    void setVisible (bool shouldBeVisible) override
+    void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         if (isSharedWindow)
         {
@@ -356,6 +356,12 @@ public:
                 [window orderFront: nil];
                 --insideToFrontCall;
                 handleBroughtToFront();
+
+                if (topLevelParentPeer != nullptr)
+                {
+                    clearNativeTopLevelParent();
+                    setNativeTopLevelParent (topLevelParentPeer);
+                }
             }
             else
             {

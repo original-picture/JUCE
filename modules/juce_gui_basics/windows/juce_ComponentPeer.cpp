@@ -701,11 +701,11 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
         setMinimisedWithoutSettingFlag (shouldBeMinimised);
     }
 
-    #ifdef __APPLE__
-        setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
+   // #ifdef __APPLE__
+    //    setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
                                                             // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
                                                             // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
-    #else
+    //#else
         // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
         // setMinimisedWithoutSettingFlag(shouldBeMinimised);
         for (ComponentPeer* peer : topLevelChildPeerList)
@@ -713,7 +713,7 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
             if (shouldBeMinimised || ! peer->isInherentlyHidden())
                 peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING
         }
-    #endif
+    //#endif
 
     if (shouldBeMinimised)
     {
@@ -741,10 +741,13 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
-    if (shouldBeVisible)                                  // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
+    if (shouldBeVisible)                {
         setVisibleWithoutSettingFlag (true);   // and postorder if we're hiding it.
+    }                   // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
 
-    for (auto* peer : topLevelChildPeerList)
+    auto topLevelChildPeerListCopy = topLevelChildPeerList; // we need to make a copy because the operations we call in the loop cause handleBroughtToFront to get called,
+                                                            // which will cause the list to be reordered while we're still using it
+    for (auto* peer : topLevelChildPeerListCopy)
     {                                                                     // don't accidentally show an inherently hidden window
         peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
     }
