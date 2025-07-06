@@ -184,8 +184,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] toggling always on top can switch the z-order of child windows (because the order in which `setAlwaysOnTop` is called on children is arbitrary)
   * fixed by extracting the insertion code from `addTopLevelChildPeer` into a private helper function and calling it from `ComponentPeer::handleFocusGained`
     - [ ] was this a valid fix though? Does `handleFocusGained` getting called imply 
-
-
+- [ ] on ubuntu, after adding the new recursive hiding code, there's a little flicker when restoring a minimised window from the taskbar
+- [ ] on ubuntu, after unhiding a window with a child, both the parent window and the child window will have a highlighted title bar,
+      implying that both have focus??
 
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
