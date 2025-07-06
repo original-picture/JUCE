@@ -192,7 +192,7 @@ public:
         return { "Software Renderer" };
     }
 
-    void setVisible (bool shouldBeVisible) override
+    void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         XWindowSystem::getInstance()->setVisible (windowH, shouldBeVisible);
     }
@@ -202,12 +202,22 @@ public:
         XWindowSystem::getInstance()->setTitle (windowH, title);
     }
 
-    void setMinimised (bool shouldBeMinimised) override
+    void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) override
     {
         if (shouldBeMinimised)
+        {
+            if(topLevelParentPeer != nullptr)
+                clearNativeTopLevelParent();
+
             XWindowSystem::getInstance()->setMinimised (windowH, shouldBeMinimised);
+        }
         else
+        {
+            if(topLevelParentPeer != nullptr)
+                setNativeTopLevelParent(topLevelParentPeer);
+
             setVisible (true);
+        }
     }
 
     bool isMinimised() const override
@@ -326,7 +336,7 @@ public:
 
     void performAnyPendingRepaintsNow() override
     {
-        if (repainter != nullptr)
+        if (repainter  != nullptr)
             repainter->performAnyPendingRepaintsNow();
     }
 
@@ -344,7 +354,7 @@ public:
 
     bool isAttachedToAnotherWindow() override
     {
-        return parentWindow != nullptr;
+        return parentWindow != 0;   // I think this is the right way to check this
     }
 
     bool setAlwaysOnTopWithoutSettingFlag (bool shouldBeAlwaysOnTop) override {
