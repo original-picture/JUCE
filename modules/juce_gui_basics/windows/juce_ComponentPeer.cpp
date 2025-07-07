@@ -739,7 +739,7 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
     insideSetVisibleRecursivelyWithoutSettingFlagCall = true;
-    ScopedValueSetter (insideSetVisibleRecursivelyWithoutSettingFlagCall, false);
+    //ScopedValueSetter svs (insideSetVisibleRecursivelyWithoutSettingFlagCall, false);
 
     if (shouldBeVisible)                {
         setVisibleWithoutSettingFlag (true);   // and postorder if we're hiding it.
@@ -755,6 +755,7 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
     if (! shouldBeVisible)
         setVisibleWithoutSettingFlag (false);
 
+    insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 bool ComponentPeer::isAncestrallyMinimised() const noexcept
@@ -936,7 +937,17 @@ void ComponentPeer::handleUserClosingWindow()
 
 void ComponentPeer::setVisible (bool shouldBeVisible)
 {
-    // TODO: do the stack walk thing here too
+    if (shouldBeVisible)
+    {
+        forEachTopLevelAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
+        {
+            if (! peer->isShowing())
+            {
+                peer->setVisible (true);
+                peer->setMinimised (false);
+            }
+        }, false);
+    }
 
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 

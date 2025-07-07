@@ -231,7 +231,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] implement `toFront`
   * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
 - [ ] add a member function `toFrontOfSiblings`
-- [X] have minimisation hide child windows instead of minimising them
+- n [X] have minimisation hide child windows instead of minimising them   
 - [X] an internal `isInherentlyHidden` attribute is necessary
 - [ ] investigate and fix always on top related minimisation bugs on windows
 - [X] add recursive hide

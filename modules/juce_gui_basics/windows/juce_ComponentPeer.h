@@ -393,16 +393,36 @@ public:
     template <typename Callback>
     void forEachTopLevelAncestorPeerFromThisToRoot (Callback&& callback)
     {
-        callback (*this); // TODO: maybe add support for early outs
+        auto currentPeer = this;
 
-        if (this->topLevelParentPeer != nullptr)
-            this->topLevelParentPeer->forEachTopLevelAncestorPeerFromThisToRoot (std::forward<Callback> (callback));
+        do
+        {
+            callback (currentPeer);
+        }
+        while ((currentPeer = currentPeer->topLevelParentPeer) != nullptr);
     }
 
     template <typename Callback>
-    void forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback)
+    void forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
     {
+        Array<ComponentPeer*> peersToProcess; // use Array as a stack because I don't want to have to include <stack>
 
+        { // limit the scope of peer
+            ComponentPeer* peer = (processThisPointer ? this : this->topLevelParentPeer);
+            while (peer != nullptr)
+            {
+                peersToProcess.add (peer); // push this and all of its ancestors onto the stack
+                peer = peer->topLevelParentPeer;
+            }
+        }
+
+        while (! peersToProcess.isEmpty()) // then pop each one off the stack and invoke callback on it
+        {
+            auto* peer = peersToProcess.getLast();
+            peersToProcess.removeLast();
+
+            callback (peer);
+        }
     }
         /*
 

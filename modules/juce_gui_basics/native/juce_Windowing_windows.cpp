@@ -4181,7 +4181,9 @@ private:
                 AccessibilityHandler::clearCurrentlyFocusedHandler();
                 updateKeyModifiers();
                 handleFocusGain();
-                setMinimised (false);
+
+                if (topLevelParentPeer == nullptr)
+                    setMinimised (false);
                 break;
 
             case WM_KILLFOCUS:
