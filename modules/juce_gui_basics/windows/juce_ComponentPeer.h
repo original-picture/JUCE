@@ -715,8 +715,7 @@ protected:
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
     bool internalIsInherentlyMinimised   = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
     bool internalIsInherentlyHidden      = false;
-    bool inSetMinimisedCall              = false;
-    bool inAncestorSetMinimisedCall();
+    bool insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
 private:
     //==============================================================================

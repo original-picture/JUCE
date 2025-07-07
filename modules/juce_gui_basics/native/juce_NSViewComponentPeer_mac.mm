@@ -359,8 +359,8 @@ public:
 
                 if (topLevelParentPeer != nullptr)
                 {
-                    clearNativeTopLevelParent();
-                    setNativeTopLevelParent (topLevelParentPeer);
+                    clearNativeTopLevelParent();                  // workaround. For some reason, toggling visibility makes the system temporarily "forget" the parent/child relationship of the toggled window,
+                    setNativeTopLevelParent (topLevelParentPeer); // clearing and resetting the parent window fixes this
                 }
             }
             else

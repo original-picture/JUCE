@@ -191,6 +191,12 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
       (the parent window will draw on top of the child, and the child won't have its position offset by its parent's position). 
       Grabbing the child window again reminds the system of the relationship
   * fixed by unparenting and reparenting. This workaround is becoming a common theme with the macOS implementation -_-
+- [X] at least on windows, activating the parent window changes relative z-order of child windows
+  * fixed by making a copy of the child peer list 
+- [ ] on windows, windows sometimes flicker slightly when gaining/losing focus
+
+# Performance
+- [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
 
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
@@ -225,10 +231,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] implement `toFront`
   * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
 - [ ] add a member function `toFrontOfSiblings`
-- [ ] have minimisation hide child windows instead of minimising them
-- [ ] an internal `isInherentlyHidden` attribute is necessary
+- [X] have minimisation hide child windows instead of minimising them
+- [X] an internal `isInherentlyHidden` attribute is necessary
 - [ ] investigate and fix always on top related minimisation bugs on windows
-- [ ] add recursive hide
+- [X] add recursive hide
   * create some abstraction over the hiding code and minimisation code probably
 - [ ] remove automatic skip taskbar code from macOS and linux implementations
 - [ ] make it illegal to minimise a child window that doesn't show on the taskbar 
@@ -238,6 +244,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] that's it?
 - [ ] remove dead code
 - [ ] make sure all the code conforms to JUCE's style guide
+- [ ] implement `forEachTopLevelAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)
