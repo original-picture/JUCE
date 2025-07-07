@@ -194,6 +194,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] at least on windows, activating the parent window changes relative z-order of child windows
   * fixed by making a copy of the child peer list 
 - [ ] on windows, windows sometimes flicker slightly when gaining/losing focus
+- [ ] not sure if this even has anything to do with my code, but on windows, windows flicker and the title bar disappears when resizing
+ * pretty sure it didn't do this before
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
