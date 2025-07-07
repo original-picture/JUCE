@@ -951,7 +951,13 @@ void ComponentPeer::setVisible (bool shouldBeVisible)
 
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 
-    if (! insideSetVisibleRecursivelyWithoutSettingFlagCall)
+    bool anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    forEachTopLevelAncestorPeerFromThisToRoot([&] (ComponentPeer* peer)
+    {
+        anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall = anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall || peer->insideSetVisibleRecursivelyWithoutSettingFlagCall;
+    });
+
+    if (! anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall)
         internalIsInherentlyHidden = ! shouldBeVisible;
 }
 
