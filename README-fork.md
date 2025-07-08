@@ -203,6 +203,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
     * nope, I checked, `setVisible` gets called immediately, it just takes a while for the effects to become visible
 - [X] on linux, `setVisible (true)` will erroneously cause windows that don't have their `windowAppearsOnTaskbar` flag set to appear on the taskbar
   * fixed by just calling `setAppearsOnTaskbar` in `setVisible` 
+- [X] on macOS, unhiding a parent window with a miniaturised child with erroneously deminiaturise the child
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window

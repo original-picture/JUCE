@@ -749,7 +749,8 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
                                                             // which will cause the list to be reordered while we're still using it
     for (auto* peer : topLevelChildPeerListCopy)
     {                                                                     // don't accidentally show an inherently hidden window
-        peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
+        if (! peer->isMinimised())
+            peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
     }
 
     if (! shouldBeVisible)
