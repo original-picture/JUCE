@@ -196,6 +196,13 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] on windows, windows sometimes flicker slightly when gaining/losing focus
 - [ ] not sure if this even has anything to do with my code, but on windows, windows flicker and the title bar disappears when resizing
  * pretty sure it didn't do this before
+- [X] on ubuntu, hiding and unhiding a window causes it to lose its always on top status
+  * fixed by just calling `setAlwaysOnTop` from `setVisible`
+- [ ] `setVisible (false)` takes several seconds to take effect on linux (why ????)
+  * this might just be an issue with `MessageManager::callAsync`
+    * nope, I checked, `setVisible` gets called immediately, it just takes a while for the effects to become visible
+- [X] on linux, `setVisible (true)` will erroneously cause windows that don't have their `windowAppearsOnTaskbar` flag set to appear on the taskbar
+  * fixed by just calling `setAppearsOnTaskbar` in `setVisible` 
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
@@ -203,7 +210,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 # Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings", 
   because with the addition of parent/child peers, the usage of that term could be confusing 
-* 
+* `LinuxComponentPeer::setAlwaysOnTop` actually works now (it used to just return false and do nothing)
+* `LinuxComponentPeer::isShowing` now calls `XGetWindowAttributes` and checks to see if the window in question has its `map_state` is `IsViewable` in addition to checking to see if the window is not minimised
+  (it used to just check if the window was not minimised)
+* added a new member to `ComponentPeer::StyleFlags` `windowUsesNormalTitlebarWhenSkippingTaskbar`
 
 # Notes
 * what is `NSViewComponentPeer::wasAlwaysOnTop`?
@@ -233,7 +243,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] implement `toFront`
   * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
 - [ ] add a member function `toFrontOfSiblings`
-- n [X] have minimisation hide child windows instead of minimising them   
+- [X] have minimisation hide child windows instead of minimising them   
 - [X] an internal `isInherentlyHidden` attribute is necessary
 - [ ] investigate and fix always on top related minimisation bugs on windows
 - [X] add recursive hide
@@ -247,6 +257,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] remove dead code
 - [ ] make sure all the code conforms to JUCE's style guide
 - [ ] implement `forEachTopLevelAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
+- [ ] make sure the minimisation and hidden state of the parent are applied when adding a child peer
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

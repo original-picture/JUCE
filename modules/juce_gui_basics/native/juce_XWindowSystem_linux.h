@@ -199,6 +199,8 @@ public:
     void setMinimised (::Window, bool shouldBeMinimised) const;
     bool isMinimised  (::Window) const;
 
+    bool isViewable (::Window);
+
     void setMaximised (::Window, bool shouldBeMinimised) const;
 
     void toFront  (::Window, bool makeActive) const;

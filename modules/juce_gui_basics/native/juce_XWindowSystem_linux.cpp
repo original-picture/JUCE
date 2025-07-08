@@ -2010,6 +2010,14 @@ bool XWindowSystem::isMinimised (::Window w) const
     return isHidden (w);
 }
 
+bool XWindowSystem::isViewable (::Window w)
+{
+    XWindowAttributes attribs;
+    X11Symbols::getInstance()->xGetWindowAttributes (display, w, &attribs);
+
+    return attribs.map_state == IsViewable;
+}
+
 void XWindowSystem::setMaximised (::Window windowH, bool shouldBeMaximised) const
 {
     const auto root = X11Symbols::getInstance()->xRootWindow (display, X11Symbols::getInstance()->xDefaultScreen (display));

@@ -195,6 +195,15 @@ public:
     void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         XWindowSystem::getInstance()->setVisible (windowH, shouldBeVisible);
+
+        if (shouldBeVisible)
+        {
+            if (! (styleFlags & windowAppearsOnTaskbar))
+                XWindowSystem::getInstance()->setAppearsOnTaskbar (windowH, false);
+
+            if (isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor()) // kind of suboptimal performance-wise, because setVisibleWithoutSettingFlag gets called recursively
+                setAlwaysOnTopWithoutSettingFlag (true);                // and then inside it we call isAlwaysOnTopByAncestor which traverses back up the peer hierarchy recursively,
+        }                                                               // but I'm just going to not worry about it :P
     }
 
     void setTitle (const String& title) override
@@ -227,7 +236,7 @@ public:
 
     bool isShowing() const override
     {
-        return ! XWindowSystem::getInstance()->isMinimised (windowH);
+        return XWindowSystem::getInstance()->isViewable (windowH) && ! XWindowSystem::getInstance()->isMinimised (windowH);
     }
 
     void setFullScreen (bool shouldBeFullScreen) override
@@ -370,13 +379,8 @@ public:
 
             //setMinimised (false);
             XWindowSystem::getInstance()->setTransientFor (this->windowH, parentX11Peer->windowH);
-
-            XWindowSystem::getInstance()->setAppearsOnTaskbar(this->windowH, false);
-
-            XWindowSystem::getInstance()->toFront(parentX11Peer->windowH, true); // silly workaround. At least on GNOME, when you remove a window from the taskbar,
-            XWindowSystem::getInstance()->toFront(this->windowH,          true); // the taskbar doesn't actually get updated (will still show the hidden window) until you activate a different window that shows on the same icon,
-        }                                                                        // So to make everything work, I just activate the parent (it doesn't have to be the parent, any window from this program would work, the parent is just the most convenient one to use)
-        else                                                                     // and then reactivate this window
+        }
+        else
         {
             jassertfalse; // wrong type of window?
         }
@@ -385,8 +389,6 @@ public:
     void clearNativeTopLevelParent() override
     {
         XWindowSystem::getInstance()->setTransientFor (this->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
-
-        XWindowSystem::getInstance()->setAppearsOnTaskbar(this->windowH, true);
     }
 
     void textInputRequired (Point<int>, TextInputTarget&) override  {}
