@@ -675,6 +675,8 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
+
+    // TODO: reimplement using forEachTopLevelAncestorPeerFromRootToThis
     if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
     {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
         std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
@@ -690,9 +692,12 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
             auto* peer = peersToProcess.top();
             peersToProcess.pop();
 
+            // TODO: peer->setVisible (true) // (and test it)
             peer->setMinimised (false);
         }
     }
+
+    insideSetVisibleRecursivelyWithoutSettingFlagCall = true; // TODO: this name is inaccurate now. Change it
 
     if (! shouldBeMinimised) // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
     {                        // and postorder if we're minimising it.
@@ -720,6 +725,8 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     }
 
     internalIsInherentlyMinimised = shouldBeMinimised;
+
+    insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -749,7 +756,7 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
                                                             // which will cause the list to be reordered while we're still using it
     for (auto* peer : topLevelChildPeerListCopy)
     {                                                                     // don't accidentally show an inherently hidden window
-        if (! peer->isMinimised())
+       if (! peer->isMinimised())
             peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
     }
 
