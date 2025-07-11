@@ -359,7 +359,7 @@ public:
 
                 if (topLevelParentPeer != nullptr)
                 {
-                    clearNativeTopLevelParent();                  // workaround. For some reason, toggling visibility makes the system temporarily "forget" the parent/child relationship of the toggled window,
+                    clearNativeTopLevelParent();                         // workaround. For some reason, toggling visibility makes the system temporarily "forget" the parent/child relationship of the toggled window,
                     setNativeTopLevelParent (topLevelParentPeer); // clearing and resetting the parent window fixes this
                 }
             }
@@ -1248,19 +1248,6 @@ public:
     {
         handleBroughtToFront();
         grabFocus();
-
-        if(topLevelParentPeer != nullptr)
-        {
-            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
-            {
-                clearNativeTopLevelParent();                // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent,
-                setNativeTopLevelParent (parentNSViewPeer); // regardless of which window is key.
-            }                                               // So even if the user clicks inside a window, if it was not the last child window to be added to its parent, it will draw underneath its siblings.
-            else                                            // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
-            {                                               // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
-                jassertfalse; // parent peer was the wrong type? How does this even happen?
-            }
-        }
     }
 
     void resignKeyWindow()
