@@ -254,11 +254,8 @@ public:
     */
     virtual bool isMinimised() const = 0;
 
-    /** Returns true if this peer has ancestors that are minimised.
-        Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
-        @see setMinimised, isMinimised, isInherentlyMinimised
-    */
-    bool isAncestrallyMinimised() const noexcept;
+    /** Returns true if this peer is minimised OR has a minimised ancestor (or ancestors). */
+    bool isMinimisedOrHasMinimisedAncestor() const noexcept;
 
     /** Returns true if this component is minimised because setMinimised(true) was called on it specifically.
         Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
@@ -268,7 +265,7 @@ public:
 
     bool isInherentlyHidden() const noexcept;
 
-    bool isHiddenByAncestor() const noexcept;
+    bool isHiddenOrHasHiddenAncestor() const noexcept;
 
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;

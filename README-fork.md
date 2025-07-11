@@ -251,7 +251,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * create some abstraction over the hiding code and minimisation code probably
 - [X] remove automatic skip taskbar code from macOS and linux implementations
   * Note: child windows always skip the taskbar on macOS (I think)
-- [ ] make it illegal to minimise a child window that doesn't show on the taskbar 
+- [ ] ~~make it illegal to~~ strongly advise people to not minimise a ~~child~~ any window that doesn't show on the taskbar 
 - [ ] finish documentation
 - [ ] figure out if the interaction between hiding and minimising causes issues
 - [X] rearrange child peer lists when a window is brought to front
@@ -259,7 +259,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] remove dead code
 - [ ] make sure all the code conforms to JUCE's style guide
 - [ ] implement `forEachTopLevelAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
-- [ ] make sure the minimisation and hidden state of the parent are applied when adding a child peer
+- [X] make sure the minimisation and hidden state of the parent are applied when adding a child peer
 - [ ] come up with a comprehensive list of manual tests to ensure behavior is correct
 
 # Anticipated FAQ

@@ -311,7 +311,6 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 
     jassert (this != &child); // adding a peer to itself!?
 
-
     if (child.topLevelParentPeer != this) // TODO: add actual cycle detection here?
     {
         if (child.topLevelParentPeer != nullptr)
@@ -323,6 +322,9 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
         insertIntoTopLevelChildPeerList(&child, zOrder);
 
         child.topLevelParentPeer = this;
+
+        if (this->isMinimisedOrHasMinimisedAncestor() || this->isHiddenOrHasHiddenAncestor())
+            child.setVisibleRecursivelyWithoutSettingFlag (false);
 
         child.setNativeTopLevelParent (this);
     }
@@ -766,17 +768,10 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
     insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
-bool ComponentPeer::isAncestrallyMinimised() const noexcept
+bool ComponentPeer::isMinimisedOrHasMinimisedAncestor() const noexcept
 {
-
-    if(topLevelParentPeer != nullptr)
-    {
-        return topLevelParentPeer->isMinimised(); // indirect recursion (isMinimised() can call isAncestrallyMinimised())
-    }
-    else
-    {
-        return false;
-    }
+    return topLevelParentPeer == nullptr ? isInherentlyMinimised()
+                                         : isInherentlyMinimised() || topLevelParentPeer->isMinimisedOrHasMinimisedAncestor();
 }
 
 bool ComponentPeer::isInherentlyMinimised() const noexcept
@@ -789,11 +784,11 @@ bool ComponentPeer::isInherentlyHidden() const noexcept
     return internalIsInherentlyHidden;
 }
 
-bool ComponentPeer::isHiddenByAncestor() const noexcept
+bool ComponentPeer::isHiddenOrHasHiddenAncestor() const noexcept
 {
     if(topLevelParentPeer != nullptr)
     {
-        return topLevelParentPeer->isAlwaysOnTop() || topLevelParentPeer->isHiddenByAncestor();
+        return topLevelParentPeer->isAlwaysOnTop() || topLevelParentPeer->isHiddenOrHasHiddenAncestor();
     }
     else
     {
