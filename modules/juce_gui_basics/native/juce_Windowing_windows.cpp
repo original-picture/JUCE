@@ -1907,7 +1907,7 @@ public:
         }
     }
 
-    void toBehind (ComponentPeer* other) override
+    void toBehindInternal (ComponentPeer* other) override
     {
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 

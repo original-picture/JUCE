@@ -437,28 +437,30 @@ public:
 
     void removeAllTopLevelChildren();
 
-    /** Returns the ancestor of this peer that hase no parent, or this peer, if this peer itself has no parent
+    /** Returns the ancestor of this peer that has no parent, or this peer, if this peer itself has no parent
      */
-    ComponentPeer* getHighestLevelAncestor() noexcept;
+    ComponentPeer* getTopLevelPeer() noexcept;
+
+    bool isAncestorOf (ComponentPeer* potentialDescendant) const noexcept;
 /*
-      ComponentPeer* getTopLevelParentPeer() const noexcept;
+    ComponentPeer* getTopLevelParentPeer() const noexcept;
 
-      Component* getTopLevelPeer() const noexcept;
+    Component* getTopLevelPeer() const noexcept;
 
-      bool isParentOf (const ComponentPeer* possibleChild) const noexcept;*/
+    bool isParentOf (const ComponentPeer* possibleChild) const noexcept;*/
 
 
 
-        /** Brings the window to the top, optionally also giving it keyboard focus. */
-        virtual void toFront(bool takeKeyboardFocus) = 0;
+    /** Brings the window to the top, optionally also giving it keyboard focus. */
+    virtual void toFront (bool takeKeyboardFocus) = 0;
 
-        /** Moves the window to be just behind another one. */
-        virtual void toBehind(ComponentPeer* other) = 0;
+    /** Moves the window to be just behind another one. */
+    void toBehind (ComponentPeer* other);
 
-        /** Called when the window is brought to the front, either by the OS or by a call
-            to toFront().
-        */
-        void handleBroughtToFront();
+    /** Called when the window is brought to the front, either by the OS or by a call
+        to toFront().
+    */
+    void handleBroughtToFront();
 
     //==============================================================================
     /** True if the window has the keyboard focus. */
@@ -716,6 +718,8 @@ protected:
 
     virtual void setVisibleWithoutSettingFlag (bool shouldBeVisible) = 0;
     void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
+
+    virtual void toBehindInternal (ComponentPeer* other) = 0;
 
     Component& component;
     const int styleFlags;

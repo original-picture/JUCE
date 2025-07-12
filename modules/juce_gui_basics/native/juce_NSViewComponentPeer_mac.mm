@@ -688,7 +688,7 @@ public:
         }
     }
 
-    void toBehind (ComponentPeer* other) override
+    void toBehindInternal (ComponentPeer* other) override
     {
         if (auto* otherPeer = dynamic_cast<NSViewComponentPeer*> (other))
         {

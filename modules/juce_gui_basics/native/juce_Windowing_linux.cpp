@@ -309,7 +309,7 @@ public:
         handleBroughtToFront();
     }
 
-    void toBehind (ComponentPeer* other) override
+    void toBehindInternal (ComponentPeer* other) override
     {
         if (auto* otherPeer = dynamic_cast<LinuxComponentPeer*> (other))
         {

@@ -261,6 +261,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] implement `forEachTopLevelAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
 - [X] make sure the minimisation and hidden state of the parent are applied when adding a child peer
 - [ ] come up with a comprehensive list of manual tests to ensure behavior is correct
+- [ ] get rid of the `topLevelParent/ChildPeer` naming convention and just use parent/child
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

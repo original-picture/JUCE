@@ -198,7 +198,7 @@ void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlways
 
 void ComponentPeer::doSetAlwaysOnTopFalseWorkaround()
 {
-    getHighestLevelAncestor()->recursivelyRefreshAlwaysOnTopStatus();
+    getTopLevelPeer()->recursivelyRefreshAlwaysOnTopStatus();
 }
 
 bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
@@ -379,13 +379,53 @@ void ComponentPeer::removeAllTopLevelChildren()
         removeTopLevelChildPeer (topLevelChildPeerList.size() - 1);
 }
 
-ComponentPeer* ComponentPeer::getHighestLevelAncestor() noexcept
+ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
 {
     ComponentPeer* ret = this;
     while (ret->topLevelParentPeer != nullptr)
         ret = ret->topLevelParentPeer;
 
     return ret;
+}
+
+bool ComponentPeer::isAncestorOf (juce::ComponentPeer* potentialDescendant) const noexcept
+{
+    while (potentialDescendant != nullptr)
+    {
+        potentialDescendant = potentialDescendant->topLevelParentPeer;
+
+        if (potentialDescendant == this)
+            return true;
+    }
+
+    return false;
+}
+
+void ComponentPeer::toBehind (juce::ComponentPeer* other)
+{
+    if (other->isAncestorOf (this))
+        return;
+
+    if (other == this)
+        return;
+
+    ComponentPeer* componentToInsert = this;
+
+    juce::Array<ComponentPeer*> ancestorList;
+    forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
+    {
+        ancestorList.add (peer);
+    });
+
+    forEachTopLevelAncestorPeerFromThisToRoot
+
+    if (topLevelParentPeer != nullptr)
+    {
+        topLevelParentPeer->topLevelChildPeerList.remove (topLevelParentPeer->topLevelChildPeerList.indexOf (this));
+        topLevelParentPeer->topLevelChildPeerList.insert ()
+    }
+
+    toBehindInternal (other);
 }
 
 Component* ComponentPeer::getTargetForKeyPress()

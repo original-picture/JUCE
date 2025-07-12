@@ -1554,7 +1554,7 @@ public:
         handleBroughtToFront();
     }
 
-    void toBehind (ComponentPeer*) override
+    void toBehindInternal (ComponentPeer*) override
     {
         // TODO
     }
