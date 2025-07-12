@@ -387,20 +387,29 @@ public:
 
     const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return topLevelChildPeerList; }
 
+    /** Make callback return true in order to early out */
     template <typename Callback>
-    void forEachTopLevelAncestorPeerFromThisToRoot (Callback&& callback)
+    bool forEachTopLevelAncestorPeerFromThisToRoot (Callback&& callback)
     {
         auto currentPeer = this;
 
         do
         {
-            callback (currentPeer);
+            if constexpr (std::is_convertible_v<decltype(callback(currentPeer)), bool>)
+            {
+                if (callback)
+                    return true;
+            }
+            else
+                callback (currentPeer);
         }
         while ((currentPeer = currentPeer->topLevelParentPeer) != nullptr);
+
+        return false;
     }
 
     template <typename Callback>
-    void forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
+    bool forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
     {
         Array<ComponentPeer*> peersToProcess; // use Array as a stack because I don't want to have to include <stack>
 
@@ -418,8 +427,16 @@ public:
             auto* peer = peersToProcess.getLast();
             peersToProcess.removeLast();
 
-            callback (peer);
+            if constexpr (std::is_convertible_v<decltype(callback(peer)), bool>)
+            {
+                if (callback)
+                    return true;
+            }
+            else
+                callback (peer);
         }
+
+        return false;
     }
         /*
 
@@ -455,7 +472,7 @@ public:
     virtual void toFront (bool takeKeyboardFocus) = 0;
 
     /** Moves the window to be just behind another one. */
-    void toBehind (ComponentPeer* other);
+    void toBehind (ComponentPeer* peerAncestor);
 
     /** Called when the window is brought to the front, either by the OS or by a call
         to toFront().

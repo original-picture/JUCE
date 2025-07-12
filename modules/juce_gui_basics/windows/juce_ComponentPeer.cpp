@@ -409,23 +409,50 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
     if (other == this)
         return;
 
-    ComponentPeer* componentToInsert = this;
-
-    juce::Array<ComponentPeer*> ancestorList;
-    forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
+    // if (this->topLevelParentPeer == other->topLevelParentPeer) // if the two peers are actually siblings and not just cousins, we can use this faster path
+    //     this->toBehindInternal (other);
+    // else
     {
-        ancestorList.add (peer);
-    });
+        ComponentPeer* componentToInsert = this;
 
-    forEachTopLevelAncestorPeerFromThisToRoot
+        juce::Array<ComponentPeer*> ancestorList;
+        forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
+                                                   {
+                                                       ancestorList.add (peer);
+                                                   });
 
-    if (topLevelParentPeer != nullptr)
-    {
-        topLevelParentPeer->topLevelChildPeerList.remove (topLevelParentPeer->topLevelChildPeerList.indexOf (this));
-        topLevelParentPeer->topLevelChildPeerList.insert ()
+        other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peerAncestor)
+        {
+            for (auto* otherAncestor : ancestorList) // linear search is faster than a hash table for small inputs
+            {
+                ComponentPeer* leastCommonAncestor;
+                if ((leastCommonAncestor = peerAncestor->topLevelParentPeer) == otherAncestor->topLevelParentPeer) // check for LCA
+                {
+                    peerAncestor->toBehindInternal (otherAncestor); // LCA found, now call toBehindInternal on the two direct children of the LCA that are ancestors of the original two peers
+                    if (leastCommonAncestor != nullptr)
+                    {
+                        auto& peerList = leastCommonAncestor->topLevelChildPeerList;
+
+                        peerList.remove (peerList.indexOf (peerAncestor));
+                        peerList.insert (peerList.indexOf (otherAncestor) + 1, peerAncestor);
+
+                        return;
+                    }
+                }
+            }
+        });
     }
 
-    toBehindInternal (other);
+    jassertfalse ;
+
+    // if (topLevelParentPeer != nullptr)
+    // {
+    //     auto& peerList = topLevelParentPeer->topLevelChildPeerList;
+//
+//
+    // }
+//
+    // toBehindInternal (other);
 }
 
 Component* ComponentPeer::getTargetForKeyPress()
