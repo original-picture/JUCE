@@ -458,7 +458,7 @@ public:
      */
     ComponentPeer* getTopLevelPeer() noexcept;
 
-    bool isAncestorOf (ComponentPeer* potentialDescendant) const noexcept;
+    bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
 /*
     ComponentPeer* getTopLevelParentPeer() const noexcept;
 
@@ -472,7 +472,7 @@ public:
     virtual void toFront (bool takeKeyboardFocus) = 0;
 
     /** Moves the window to be just behind another one. */
-    void toBehind (ComponentPeer* peerAncestor);
+    void toBehind (ComponentPeer* ancestorOfThis);
 
     /** Called when the window is brought to the front, either by the OS or by a call
         to toFront().
@@ -737,6 +737,7 @@ protected:
     void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
 
     virtual void toBehindInternal (ComponentPeer* other) = 0;
+    void callToBehindInternalAndRearrangeChildList (ComponentPeer* other);
 
     Component& component;
     const int styleFlags;

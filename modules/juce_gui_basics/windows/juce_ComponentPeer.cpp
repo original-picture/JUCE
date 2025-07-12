@@ -388,30 +388,46 @@ ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
     return ret;
 }
 
-bool ComponentPeer::isAncestorOf (juce::ComponentPeer* potentialDescendant) const noexcept
+bool ComponentPeer::isAncestorOf (juce::ComponentPeer* possibleDescendant) const noexcept
 {
-    while (potentialDescendant != nullptr)
+    while (possibleDescendant != nullptr)
     {
-        potentialDescendant = potentialDescendant->topLevelParentPeer;
+        possibleDescendant = possibleDescendant->topLevelParentPeer;
 
-        if (potentialDescendant == this)
+        if (possibleDescendant == this)
             return true;
     }
 
     return false;
 }
 
+void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPeer* other)
+{
+    if (this->isAlwaysOnTop() == other->isAlwaysOnTop())
+    {
+        this->toBehindInternal(other);
+
+        if (topLevelParentPeer != nullptr)
+        {
+            auto& peerList = topLevelParentPeer->topLevelChildPeerList;
+
+            peerList.remove (peerList.indexOf (this));
+            peerList.insert (peerList.indexOf (other) + 1, this);
+
+            return;
+        }
+    }
+}
+
 void ComponentPeer::toBehind (juce::ComponentPeer* other)
 {
-    if (other->isAncestorOf (this))
+    if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this)
         return;
 
-    if (other == this)
-        return;
-
-    // if (this->topLevelParentPeer == other->topLevelParentPeer) // if the two peers are actually siblings and not just cousins, we can use this faster path
-    //     this->toBehindInternal (other);
-    // else
+    if (this->topLevelParentPeer == other->topLevelParentPeer) { // if the two peers are actually siblings and not just cousins, we can use this faster path
+        callToBehindInternalAndRearrangeChildList (other);
+    }
+    else
     {
         ComponentPeer* componentToInsert = this;
 
@@ -421,38 +437,22 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
                                                        ancestorList.add (peer);
                                                    });
 
-        other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peerAncestor)
+        other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* ancestorOfThis)
         {
-            for (auto* otherAncestor : ancestorList) // linear search is faster than a hash table for small inputs
+            for (auto* ancestorOfOther : ancestorList) // linear search is faster than a hash table for small inputs
             {
                 ComponentPeer* leastCommonAncestor;
-                if ((leastCommonAncestor = peerAncestor->topLevelParentPeer) == otherAncestor->topLevelParentPeer) // check for LCA
+                if ((leastCommonAncestor = ancestorOfThis->topLevelParentPeer) == ancestorOfOther->topLevelParentPeer) // check for LCA
                 {
-                    peerAncestor->toBehindInternal (otherAncestor); // LCA found, now call toBehindInternal on the two direct children of the LCA that are ancestors of the original two peers
-                    if (leastCommonAncestor != nullptr)
-                    {
-                        auto& peerList = leastCommonAncestor->topLevelChildPeerList;
-
-                        peerList.remove (peerList.indexOf (peerAncestor));
-                        peerList.insert (peerList.indexOf (otherAncestor) + 1, peerAncestor);
-
-                        return;
-                    }
+                    // LCA found, now call toBehindInternal on the two direct children of the LCA that are ancestors of the original two peers
+                    ancestorOfThis->callToBehindInternalAndRearrangeChildList (ancestorOfOther);
+                    return;
                 }
             }
         });
+
+        jassertfalse;
     }
-
-    jassertfalse ;
-
-    // if (topLevelParentPeer != nullptr)
-    // {
-    //     auto& peerList = topLevelParentPeer->topLevelChildPeerList;
-//
-//
-    // }
-//
-    // toBehindInternal (other);
 }
 
 Component* ComponentPeer::getTargetForKeyPress()
