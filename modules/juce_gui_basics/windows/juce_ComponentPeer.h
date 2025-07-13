@@ -397,7 +397,7 @@ public:
         {
             if constexpr (std::is_convertible_v<decltype(callback(currentPeer)), bool>)
             {
-                if (callback)
+                if (callback (currentPeer))
                     return true;
             }
             else

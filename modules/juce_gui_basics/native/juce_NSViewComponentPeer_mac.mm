@@ -719,6 +719,23 @@ public:
             {
                 [window orderWindow: NSWindowBelow
                          relativeTo: [otherPeer->window windowNumber]];
+
+                if (topLevelParentPeer != nullptr)
+                {
+                    auto parentPeer = dynamic_cast<NSViewComponentPeer*>(topLevelParentPeer);
+                    jassert (parentPeer);
+
+                    auto& childPeerList = parentPeer->topLevelChildPeerList;
+
+                    for (auto i = childPeerList.indexOf (this); i < childPeerList.size(); ++i) // we need to do the unparent and reparent workaround for this peer and all of its siblings that should be in front of it
+                    {
+                        auto currentPeer = dynamic_cast<NSViewComponentPeer*>(childPeerList[i]);
+                        jassert (currentPeer);
+
+                        currentPeer->clearNativeTopLevelParent();
+                        currentPeer->setNativeTopLevelParent (parentPeer);
+                    }
+                }
             }
         }
         else

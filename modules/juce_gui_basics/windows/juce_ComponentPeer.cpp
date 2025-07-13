@@ -405,53 +405,58 @@ void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPe
 {
     if (this->isAlwaysOnTop() == other->isAlwaysOnTop())
     {
-        this->toBehindInternal(other);
-
         if (topLevelParentPeer != nullptr)
         {
             auto& peerList = topLevelParentPeer->topLevelChildPeerList;
 
             peerList.remove (peerList.indexOf (this));
-            peerList.insert (peerList.indexOf (other) + 1, this);
+            peerList.insert (peerList.indexOf (other), this);
 
-            return;
         }
+
+        this->toBehindInternal(other); // it's important that this happens AFTER the above code,
+                                       // because the macOS implementation has to do a workaround that needs to see the parent's child peer list in the correct order
     }
 }
 
-void ComponentPeer::toBehind (juce::ComponentPeer* other)
+void check (ComponentPeer* THIS, ComponentPeer* OTHER)
 {
-    if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this)
-        return;
+    int x = 2;
 
-    if (this->topLevelParentPeer == other->topLevelParentPeer) { // if the two peers are actually siblings and not just cousins, we can use this faster path
+}
+
+void ComponentPeer::toBehind (juce::ComponentPeer* other)
+{                                                                                       // the macOS implementation of toBehindInternal doesn't do anything if this peer isn't visible, so I need to reflect that behavior here as well
+    if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this || ! (this->isShowing()))
+        return;
+    else if (this->topLevelParentPeer == other->topLevelParentPeer) { // if the two peers are actually siblings and not just cousins, we can use this faster path
         callToBehindInternalAndRearrangeChildList (other);
     }
     else
     {
         ComponentPeer* componentToInsert = this;
 
-        juce::Array<ComponentPeer*> ancestorList;
-        forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
-                                                   {
-                                                       ancestorList.add (peer);
-                                                   });
-
-        other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* ancestorOfThis)
+        juce::Array<ComponentPeer*> ancestorsOfThisList;
+        this->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
         {
-            for (auto* ancestorOfOther : ancestorList) // linear search is faster than a hash table for small inputs
+            ancestorsOfThisList.add (peer);
+        });
+
+        bool leastCommonAncestorFound = other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* ancestorOfOther)
+        {
+            for (auto* ancestorOfThis : ancestorsOfThisList) // linear search is faster than a hash table for small inputs
             {
-                ComponentPeer* leastCommonAncestor;
-                if ((leastCommonAncestor = ancestorOfThis->topLevelParentPeer) == ancestorOfOther->topLevelParentPeer) // check for LCA
+                check(ancestorOfThis, ancestorOfOther);
+                if (ancestorOfThis->topLevelParentPeer == ancestorOfOther->topLevelParentPeer) // check for LCA
                 {
                     // LCA found, now call toBehindInternal on the two direct children of the LCA that are ancestors of the original two peers
                     ancestorOfThis->callToBehindInternalAndRearrangeChildList (ancestorOfOther);
-                    return;
+                    return true;
                 }
             }
         });
 
-        jassertfalse;
+        jassert (leastCommonAncestorFound); // LCA wasn't found (shouldn't be possible because nullptr is a valid LCA, and all peers technically have nullptr as an ancestor)
     }
 }
 
