@@ -3456,6 +3456,9 @@ static int64 getEventTime (const EventType& t)
     return getEventTime (t.time);
 }
 
+void handleConfigureRequestEvent() {
+
+}
 void XWindowSystem::handleWindowMessage (LinuxComponentPeer* peer, XEvent& event) const
 {
     switch (event.xany.type)
@@ -3474,6 +3477,7 @@ void XWindowSystem::handleWindowMessage (LinuxComponentPeer* peer, XEvent& event
         case ClientMessage:         handleClientMessageEvent   (peer, event.xclient, event);           break;
         case SelectionNotify:       dragAndDropStateMap[peer].handleDragAndDropSelection (event);      break;
         case ConfigureNotify:       handleConfigureNotifyEvent (peer, event.xconfigure);               break;
+        case ConfigureRequest:      handleConfigureRequestEvent();                                     break;
         case ReparentNotify:
         case GravityNotify:         handleGravityNotify (peer);                                        break;
         case SelectionClear:        dragAndDropStateMap[peer].handleExternalSelectionClear();          break;
@@ -3935,6 +3939,10 @@ void XWindowSystem::handleMappingNotify (XMappingEvent& mappingEvent) const
 
 void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientMessageEvent& clientMsg, XEvent& event) const
 {
+    auto stacked = XWindowSystemUtilities::Atoms::getCreating (display, "_NET_RESTACK_WINDOW");
+
+    auto name = X11Symbols::getInstance()->xGetAtomName(display, clientMsg.message_type);
+
     if (clientMsg.message_type == atoms.protocols && clientMsg.format == 32)
     {
         auto atom = (Atom) clientMsg.data.l[0];

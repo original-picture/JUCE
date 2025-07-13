@@ -204,6 +204,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] on linux, `setVisible (true)` will erroneously cause windows that don't have their `windowAppearsOnTaskbar` flag set to appear on the taskbar
   * fixed by just calling `setAppearsOnTaskbar` in `setVisible` 
 - [X] on macOS, unhiding a parent window with a miniaturised child with erroneously deminiaturise the child
+- [ ] on ubuntu, setting a window as always on top rearranges child windows
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
@@ -241,8 +242,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] implement `toBehind`
   - [ ] rearrange child peer lists
     - [ ] figure out if this needs to be done recursively
+    - [ ] fix linux implementation
 - [ ] implement `toFront`
-  * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
+9 * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
 - [ ] add a member function `toFrontOfSiblings`
 - [X] have minimisation hide child windows instead of minimising them   
 - [X] an internal `isInherentlyHidden` attribute is necessary
@@ -262,6 +264,8 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] make sure the minimisation and hidden state of the parent are applied when adding a child peer
 - [ ] come up with a comprehensive list of manual tests to ensure behavior is correct
 - [ ] get rid of the `topLevelParent/ChildPeer` naming convention and just use parent/child
+- [ ] update the value of isInherentlyMinimised in setVisible and update the value of isInherentlyHidden in setMinimised
+- [ ] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

@@ -454,6 +454,8 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
                     return true;
                 }
             }
+
+            return false;
         });
 
         jassert (leastCommonAncestorFound); // LCA wasn't found (shouldn't be possible because nullptr is a valid LCA, and all peers technically have nullptr as an ancestor)
