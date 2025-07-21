@@ -3942,6 +3942,7 @@ void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientM
     auto stacked = XWindowSystemUtilities::Atoms::getCreating (display, "_NET_RESTACK_WINDOW");
 
     auto name = X11Symbols::getInstance()->xGetAtomName(display, clientMsg.message_type);
+    auto atomname = X11Symbols::getInstance()->xGetAtomName(display, clientMsg.data.l[0]);
 
     if (clientMsg.message_type == atoms.protocols && clientMsg.format == 32)
     {
@@ -3975,6 +3976,20 @@ void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientM
                                                                    RevertToParent, (::Time) clientMsg.data.l[1]);
                     }
                 }
+            }
+
+            auto parentOfPeer = peer->getTopLevelParentPeer();
+            auto& childPeerList = parentOfPeer->getTopLevelChildren();
+
+            bool isFront = isFrontWindow ((::Window) peer->getNativeHandle());
+
+            if (
+                   isFrontWindow ((::Window) peer->getNativeHandle())
+                   || (parentOfPeer != nullptr && ((childPeerList.indexOf (peer) == childPeerList.size() - 1)
+                   || (! dynamic_cast<ComponentPeer*>(peer)->isAlwaysOnTop() && (childPeerList[childPeerList.indexOf (peer) + 1]->isAlwaysOnTop()))
+               )))
+            {
+                peer->handleBroughtToFront();
             }
         }
         else if (atom == atoms.protocolList [XWindowSystemUtilities::Atoms::DELETE_WINDOW])

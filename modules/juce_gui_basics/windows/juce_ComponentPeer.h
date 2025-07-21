@@ -459,9 +459,9 @@ public:
     ComponentPeer* getTopLevelPeer() noexcept;
 
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
-/*
-    ComponentPeer* getTopLevelParentPeer() const noexcept;
 
+    ComponentPeer* getTopLevelParentPeer() const noexcept;
+/*
     Component* getTopLevelPeer() const noexcept;
 
     bool isParentOf (const ComponentPeer* possibleChild) const noexcept;*/

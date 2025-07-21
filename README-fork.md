@@ -266,6 +266,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] get rid of the `topLevelParent/ChildPeer` naming convention and just use parent/child
 - [ ] update the value of isInherentlyMinimised in setVisible and update the value of isInherentlyHidden in setMinimised
 - [ ] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
+  - it's keeping track of peers globally, but it doesn't look like it cares about z-order
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

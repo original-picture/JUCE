@@ -401,6 +401,11 @@ bool ComponentPeer::isAncestorOf (juce::ComponentPeer* possibleDescendant) const
     return false;
 }
 
+ComponentPeer* ComponentPeer::getTopLevelParentPeer() const noexcept
+{
+    return topLevelParentPeer;
+}
+
 void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPeer* other)
 {
     if (this->isAlwaysOnTop() == other->isAlwaysOnTop())
