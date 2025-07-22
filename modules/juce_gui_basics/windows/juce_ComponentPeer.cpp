@@ -54,13 +54,6 @@ ComponentPeer::ComponentPeer (Component& comp, int flags)
 
 ComponentPeer::~ComponentPeer()
 {
-   // if(floatingChildPeerParent != nullptr)
-   //     floatingChildPeerParent->internalRemoveFloatingChildPeer(this, false);
-                                                                  // don't call clearFloatingChildPeerNativeParent
-                                                                  // (we can't call it here because it's virtual and we're currently in a destructor)
-                                                                  // clearFloatingChildPeerNativeParent will get called in the destructor of the derived class
-    //removeAllFloatingChildren();
-
     auto& desktop = Desktop::getInstance();
     desktop.removeFocusChangeListener (this);
     desktop.peers.removeFirstMatchingValue (this);
@@ -183,16 +176,16 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
-void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop)
+void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentPeerIsAlwaysOnTop)
 {
-    currentNodeIsAlwaysOnTop |= this->isInherentlyAlwaysOnTop(); // since we're traversing the hierarchy from the root, we might as well keep track of the (ancestrally) always on top status ourselves
+    currentPeerIsAlwaysOnTop |= this->isInherentlyAlwaysOnTop(); // since we're traversing the hierarchy from the root, we might as well keep track of the (ancestrally) always on top status ourselves
                                                                  // (as opposed to using isAlwaysOnTop(), which will recursively traverse UP the hierarchy to the root every time
-    if (currentNodeIsAlwaysOnTop)               // calling setAlwaysOnTopWithoutSettingFlag(false) is what causes the bug,
+    if (currentPeerIsAlwaysOnTop)               // calling setAlwaysOnTopWithoutSettingFlag(false) is what causes the bug,
         setAlwaysOnTopWithoutSettingFlag(true); // so it's important that we only call setAlwaysOnTopWithoutSettingFlag(true), otherwise we would be undoing our work
 
     for (auto* peer : floatingChildPeerList)
     {
-        peer->recursivelyRefreshAlwaysOnTopStatus(currentNodeIsAlwaysOnTop);
+        peer->recursivelyRefreshAlwaysOnTopStatus(currentPeerIsAlwaysOnTop);
     }
 }
 
@@ -323,7 +316,7 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 
         child.floatingChildPeerParent = this;
 
-        if (this->isMinimisedOrHasMinimisedAncestor() || this->isHiddenOrHasHiddenAncestor())
+        if (this->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() || this->isInherentlyHiddenOrHasInherentlyHiddenAncestor())
             child.setVisibleRecursivelyWithoutSettingFlag (false);
 
         child.setFloatingChildPeerNativeParent (this);
@@ -834,15 +827,22 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
     insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
-bool ComponentPeer::isMinimisedOrHasMinimisedAncestor() const noexcept
-{
-    return floatingChildPeerParent == nullptr ? isInherentlyMinimised()
-                                              : isInherentlyMinimised() || floatingChildPeerParent->isMinimisedOrHasMinimisedAncestor();
-}
-
 bool ComponentPeer::isInherentlyMinimised() const noexcept
 {
     return internalIsInherentlyMinimised;
+}
+
+bool ComponentPeer::hasInherentlyMinimisedAncestor() const noexcept
+{
+    if(floatingChildPeerParent != nullptr)
+        return floatingChildPeerParent->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor(); // indirect recursion
+    else
+        return false;
+}
+
+bool ComponentPeer::isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() const noexcept
+{
+    return isInherentlyMinimised() || hasInherentlyMinimisedAncestor(); // indirect recursion
 }
 
 bool ComponentPeer::isInherentlyHidden() const noexcept
@@ -850,16 +850,17 @@ bool ComponentPeer::isInherentlyHidden() const noexcept
     return internalIsInherentlyHidden;
 }
 
-bool ComponentPeer::isHiddenOrHasHiddenAncestor() const noexcept
+bool ComponentPeer::hasInherentlyHiddenAncestor() const noexcept
 {
     if(floatingChildPeerParent != nullptr)
-    {
-        return floatingChildPeerParent->isAlwaysOnTop() || floatingChildPeerParent->isHiddenOrHasHiddenAncestor();
-    }
+        return floatingChildPeerParent->isInherentlyHiddenOrHasInherentlyHiddenAncestor(); // indirect recursion
     else
-    {
         return false;
-    }
+}
+
+bool ComponentPeer::isInherentlyHiddenOrHasInherentlyHiddenAncestor() const noexcept
+{
+        return isInherentlyHidden() || hasInherentlyHiddenAncestor(); // indirect recursion
 }
 
 //==============================================================================

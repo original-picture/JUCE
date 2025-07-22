@@ -249,23 +249,36 @@ public:
     /** Minimises the window. Child peers will be minimized recursively. */
     void setMinimised (bool shouldBeMinimised);
 
-    /** Returns true if this peer is minimized.
+    /** Returns true if this peer is minimised.
         @see setMinimised
     */
     virtual bool isMinimised() const = 0;
 
-    /** Returns true if this peer is minimised OR has a minimised ancestor (or ancestors). */
-    bool isMinimisedOrHasMinimisedAncestor() const noexcept;
-
-    /** Returns true if this component is minimised because setMinimised(true) was called on it specifically.
-        Note that isAncestrallyMinimised() and isInherentlyMinimised() are not mutually exclusive!
-        @see setMinimised, isMinimised, isAncestrallyMinimised
+    /** Returns true if this peer is minimised because setMinimised (true) was called on it specifically.
+        On some platforms, isMinimised might return true for windows that have a minimised ancestor,
+        so this function can be used to differentiate between inherently and ancestralyl minimised windows
     */
     bool isInherentlyMinimised() const noexcept;
 
+    /** True if this peer has one or more inherently minimised ancestors. */
+    bool hasInherentlyMinimisedAncestor() const noexcept;
+
+    /** Returns true if this peer is inherently minimised OR has at least one inherently minimised ancestor (or ancestors). */
+    bool isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() const noexcept;
+
+
+    /** Returns true if this component is hidden because setHidden (true) was called on it specifically.
+        Useful because isShowing doesn't give you enough information about *why* a peer is/isn't showing.
+        (a peer being inherently hidden, having an inherently hidden ancestor, and/or having a minimised ancestor can all cause isShowing to return false)
+        @see setVisible, isShowing, isInherentlyHidden, hasInherentlyHiddenAncestor, isInherentlyHiddenOrHasInherentlyHiddenAncestor
+    */
     bool isInherentlyHidden() const noexcept;
 
-    bool isHiddenOrHasHiddenAncestor() const noexcept;
+    /** True if this peer has one or more inherently hidden ancestors. */
+    bool hasInherentlyHiddenAncestor() const noexcept;
+
+    /** Returns true if this peer is inherently hidden OR has at least one inherently hidden ancestor (or ancestors). */
+    bool isInherentlyHiddenOrHasInherentlyHiddenAncestor() const noexcept;
 
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;
@@ -786,7 +799,7 @@ private:
     void globalFocusChanged (Component*) override;
     Component* getTargetForKeyPress();
 
-    void recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlwaysOnTop = false);
+    void recursivelyRefreshAlwaysOnTopStatus(bool currentPeerIsAlwaysOnTop = false);
     void doSetAlwaysOnTopFalseWorkaround();
 
    /**

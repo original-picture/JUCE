@@ -121,7 +121,7 @@ public:
     virtual void setVisible (bool shouldBeVisible);
 
     /** Tests whether the component is visible or not.
-6
+
         this doesn't necessarily tell you whether this comp is actually on the screen
         because this depends on whether all the parent components are also visible - use
         isShowing() to find this out.
