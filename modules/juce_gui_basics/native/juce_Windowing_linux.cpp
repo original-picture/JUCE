@@ -76,9 +76,9 @@ public:
         JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
 
         // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
-        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // I really want to find a way to do this without code duplication, but clearFloatingChildPeerNativeParent is virtual, which means I can't call it from ComponentPeer's destructor,
         // so I'm not sure how else to do this
-        doTopLevelChildPeerCleanup();
+        doFloatingChildPeerCleanup();
 
         auto* instance = XWindowSystem::getInstance();
 
@@ -215,15 +215,15 @@ public:
     {
         if (shouldBeMinimised)
         {
-            if(topLevelParentPeer != nullptr)
-                clearNativeTopLevelParent();
+            if(floatingChildPeerParent != nullptr)
+                clearFloatingChildPeerNativeParent();
 
             XWindowSystem::getInstance()->setMinimised (windowH, shouldBeMinimised);
         }
         else
         {
-            if(topLevelParentPeer != nullptr)
-                setNativeTopLevelParent(topLevelParentPeer);
+            if(floatingChildPeerParent != nullptr)
+                setFloatingChildPeerNativeParent(floatingChildPeerParent);
 
             setVisible (true);
         }
@@ -370,7 +370,7 @@ public:
         return XWindowSystem::getInstance()->setAlwaysOnTop(this->windowH, shouldBeAlwaysOnTop);
     }
 
-    void setNativeTopLevelParent (ComponentPeer* parent) override
+    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentX11Peer = dynamic_cast<LinuxComponentPeer*> (parent))
         {
@@ -386,7 +386,7 @@ public:
         }
     }
 
-    void clearNativeTopLevelParent() override
+    void clearFloatingChildPeerNativeParent() override
     {
         XWindowSystem::getInstance()->setTransientFor (this->windowH, XWindowSystem::getInstance()->getDefaultRootWindow());
     }

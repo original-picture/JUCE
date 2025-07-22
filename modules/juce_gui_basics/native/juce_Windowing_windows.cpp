@@ -1466,9 +1466,9 @@ public:
     ~HWNDComponentPeer() override
     {
         // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
-        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // I really want to find a way to do this without code duplication, but clearFloatingChildPeerNativeParent is virtual, which means I can't call it from ComponentPeer's destructor,
         // so I'm not sure how else to do this
-        doTopLevelChildPeerCleanup();
+        doFloatingChildPeerCleanup();
 
         // Clean up that needs to happen on the calling thread
         suspendResumeRegistration = {};
@@ -1836,7 +1836,7 @@ public:
         return true;
     }
 
-    void setNativeTopLevelParent (ComponentPeer* parent) override
+    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentHWNDPeer = dynamic_cast<HWNDComponentPeer*> (parent))
         {
@@ -1861,7 +1861,7 @@ public:
         }
     }
 
-    void clearNativeTopLevelParent() override
+    void clearFloatingChildPeerNativeParent() override
     {
         /*if (otherPeer->styleFlags & windowIsTemporary) // should this be here?
             return;*/                                    // is this some kind of null check?
@@ -1879,11 +1879,11 @@ public:
         SetWindowLongPtr(this->hwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(GetDesktopWindow()));
     }
 
-    void conditionalClearNativeTopLeveLParent()
+    void conditionalclearFloatingChildPeerNativeParent()
     {
-        if (topLevelParentPeer != nullptr)
+        if (floatingChildPeerParent != nullptr)
         {
-            clearNativeTopLevelParent();
+            clearFloatingChildPeerNativeParent();
         }
     }
 
@@ -4182,7 +4182,7 @@ private:
                 updateKeyModifiers();
                 handleFocusGain();
 
-                if (topLevelParentPeer == nullptr)
+                if (floatingChildPeerParent == nullptr)
                     setMinimised (false);
                 break;
 

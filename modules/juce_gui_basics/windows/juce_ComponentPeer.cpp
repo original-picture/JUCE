@@ -54,12 +54,12 @@ ComponentPeer::ComponentPeer (Component& comp, int flags)
 
 ComponentPeer::~ComponentPeer()
 {
-   // if(topLevelParentPeer != nullptr)
-   //     topLevelParentPeer->internalRemoveTopLevelChildPeer(this, false);
-                                                                  // don't call clearNativeTopLevelParent
+   // if(floatingChildPeerParent != nullptr)
+   //     floatingChildPeerParent->internalRemoveFloatingChildPeer(this, false);
+                                                                  // don't call clearFloatingChildPeerNativeParent
                                                                   // (we can't call it here because it's virtual and we're currently in a destructor)
-                                                                  // clearNativeTopLevelParent will get called in the destructor of the derived class
-    //removeAllTopLevelChildren();
+                                                                  // clearFloatingChildPeerNativeParent will get called in the destructor of the derived class
+    //removeAllFloatingChildren();
 
     auto& desktop = Desktop::getInstance();
     desktop.removeFocusChangeListener (this);
@@ -190,7 +190,7 @@ void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentNodeIsAlways
     if (currentNodeIsAlwaysOnTop)               // calling setAlwaysOnTopWithoutSettingFlag(false) is what causes the bug,
         setAlwaysOnTopWithoutSettingFlag(true); // so it's important that we only call setAlwaysOnTopWithoutSettingFlag(true), otherwise we would be undoing our work
 
-    for (auto* peer : topLevelChildPeerList)
+    for (auto* peer : floatingChildPeerList)
     {
         peer->recursivelyRefreshAlwaysOnTopStatus(currentNodeIsAlwaysOnTop);
     }
@@ -207,7 +207,7 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
     {
         internalIsInherentlyAlwaysOnTop = alwaysOnTop;
 
-        for (ComponentPeer* child : topLevelChildPeerList)
+        for (ComponentPeer* child : floatingChildPeerList)
         {
             child->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop); // I guess technically I should be checking to see if all these recursive calls succeed
         }                                                                     // but the only time setAlwaysOnTopWithoutSettingFlag returns false is on linux,
@@ -228,7 +228,7 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
 
     if(! this->isInherentlyAlwaysOnTop())
     {
-        for(ComponentPeer* peer : topLevelChildPeerList)
+        for(ComponentPeer* peer : floatingChildPeerList)
         {
             peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
         }
@@ -238,16 +238,16 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
     // an always on top ancestor is checked for recursively each time, without any caching
 }
 
-void ComponentPeer::insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder)
+void ComponentPeer::insertIntoFloatingChildPeerList (ComponentPeer* childToBe, int zOrder)
 {
-    if (zOrder < 0 || zOrder > topLevelChildPeerList.size())
-        zOrder = topLevelChildPeerList.size();
+    if (zOrder < 0 || zOrder > floatingChildPeerList.size())
+        zOrder = floatingChildPeerList.size();
 
     if (childToBe->isAlwaysOnTop())
     {
-        while (zOrder < topLevelChildPeerList.size())
+        while (zOrder < floatingChildPeerList.size())
         {
-            if (topLevelChildPeerList[zOrder]->isAlwaysOnTop())
+            if (floatingChildPeerList[zOrder]->isAlwaysOnTop())
                 break;
 
             ++zOrder;
@@ -257,14 +257,14 @@ void ComponentPeer::insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, i
     {
         while (zOrder > 0)
         {
-            if (! topLevelChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
+            if (! floatingChildPeerList.getUnchecked (zOrder - 1)->isAlwaysOnTop())
                 break;
 
             --zOrder;
         }
     }
 
-    topLevelChildPeerList.insert (zOrder, childToBe);
+    floatingChildPeerList.insert (zOrder, childToBe);
 }
 
 
@@ -277,9 +277,9 @@ bool ComponentPeer::isAlwaysOnTop() const noexcept
 bool ComponentPeer::isAlwaysOnTopByAncestor() const noexcept
 {
 
-    if(topLevelParentPeer != nullptr)
+    if(floatingChildPeerParent != nullptr)
     {
-        return topLevelParentPeer->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAlwaysOnTopByAncestor())
+        return floatingChildPeerParent->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAlwaysOnTopByAncestor())
     }
     else
     {
@@ -292,18 +292,18 @@ bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
     return internalIsInherentlyAlwaysOnTop;
 }
 
-int ComponentPeer::getNumTopLevelChildPeers() const noexcept
+int ComponentPeer::getNumFloatingChildPeers() const noexcept
 {
-    return topLevelChildPeerList.size();
+    return floatingChildPeerList.size();
 }
 
-bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
+bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 {
     jassert(! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
     jassert(! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
 
-                                                  // Long story short, nativeWindowToAttachTo and addTopLevelChildPeer map to different systems of the underlying OS-specific APIs
-                                                  // For example, nativeWindowToAttachTo creates a win32 *child* window, while addTopLevelChildPeer creates a win32 *owned* window. MacOS and linux have analogous constructs
+                                                  // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
+                                                  // For example, nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous constructs
                                                   // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
                                                   // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
                                                   // then you probably want the functionality of one of them, but just don't know which one
@@ -311,53 +311,53 @@ bool ComponentPeer::addTopLevelChildPeer (ComponentPeer& child, int zOrder)
 
     jassert (this != &child); // adding a peer to itself!?
 
-    if (child.topLevelParentPeer != this) // TODO: add actual cycle detection here?
+    if (child.floatingChildPeerParent != this) // TODO: add actual cycle detection here?
     {
-        if (child.topLevelParentPeer != nullptr)
-            child.topLevelParentPeer->removeTopLevelChildPeer (&child);
+        if (child.floatingChildPeerParent != nullptr)
+            child.floatingChildPeerParent->removeFloatingChildPeer (&child);
 
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
 
-        insertIntoTopLevelChildPeerList(&child, zOrder);
+        insertIntoFloatingChildPeerList(&child, zOrder);
 
-        child.topLevelParentPeer = this;
+        child.floatingChildPeerParent = this;
 
         if (this->isMinimisedOrHasMinimisedAncestor() || this->isHiddenOrHasHiddenAncestor())
             child.setVisibleRecursivelyWithoutSettingFlag (false);
 
-        child.setNativeTopLevelParent (this);
+        child.setFloatingChildPeerNativeParent (this);
     }
 
     return false;
 }
 
-void ComponentPeer::removeTopLevelChildPeer (ComponentPeer* childToRemove)
+void ComponentPeer::removeFloatingChildPeer (ComponentPeer* childToRemove)
 {
-    internalRemoveTopLevelChildPeer (childToRemove, true);
+    internalRemoveFloatingChildPeer (childToRemove, true);
 }
 
-ComponentPeer* ComponentPeer::removeTopLevelChildPeer (int childIndexToRemove)
+ComponentPeer* ComponentPeer::removeFloatingChildPeer (int childIndexToRemove)
 {
-    return internalRemoveTopLevelChildPeer (childIndexToRemove, true);
+    return internalRemoveFloatingChildPeer (childIndexToRemove, true);
 }
 
-ComponentPeer* ComponentPeer::internalRemoveTopLevelChildPeer (ComponentPeer* childToRemove, bool shouldCallClearNativeTopLevelParent)
+ComponentPeer* ComponentPeer::internalRemoveFloatingChildPeer (ComponentPeer* childToRemove, bool shouldCallclearFloatingChildPeerNativeParent)
 {
-    return internalRemoveTopLevelChildPeer(topLevelChildPeerList.indexOf(childToRemove), shouldCallClearNativeTopLevelParent);
+    return internalRemoveFloatingChildPeer(floatingChildPeerList.indexOf(childToRemove), shouldCallclearFloatingChildPeerNativeParent);
 }
 
-ComponentPeer* ComponentPeer::internalRemoveTopLevelChildPeer (int childIndexToRemove, bool shouldCallClearNativeTopLevelParent)
+ComponentPeer* ComponentPeer::internalRemoveFloatingChildPeer (int childIndexToRemove, bool shouldCallclearFloatingChildPeerNativeParent)
 {
-    if (auto* child = topLevelChildPeerList [childIndexToRemove])
+    if (auto* child = floatingChildPeerList [childIndexToRemove])
     {
-        if (shouldCallClearNativeTopLevelParent)
-            child->clearNativeTopLevelParent();
+        if (shouldCallclearFloatingChildPeerNativeParent)
+            child->clearFloatingChildPeerNativeParent();
 
         child->setAlwaysOnTopRecursivelyWithoutSettingFlag(false);
-        child->topLevelParentPeer = nullptr;
+        child->floatingChildPeerParent = nullptr;
 
-        topLevelChildPeerList.remove (childIndexToRemove);
+        floatingChildPeerList.remove (childIndexToRemove);
 
         return child;
     }
@@ -365,25 +365,25 @@ ComponentPeer* ComponentPeer::internalRemoveTopLevelChildPeer (int childIndexToR
     return nullptr;
 }
 
-void ComponentPeer::doTopLevelChildPeerCleanup()
+void ComponentPeer::doFloatingChildPeerCleanup()
 {
-    removeAllTopLevelChildren();
+    removeAllFloatingChildren();
 
-    if (topLevelParentPeer)
-        topLevelParentPeer->removeTopLevelChildPeer(this);
+    if (floatingChildPeerParent)
+        floatingChildPeerParent->removeFloatingChildPeer(this);
 }
 
-void ComponentPeer::removeAllTopLevelChildren()
+void ComponentPeer::removeAllFloatingChildren()
 {
-    while (! topLevelChildPeerList.isEmpty())
-        removeTopLevelChildPeer (topLevelChildPeerList.size() - 1);
+    while (! floatingChildPeerList.isEmpty())
+        removeFloatingChildPeer (floatingChildPeerList.size() - 1);
 }
 
 ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
 {
     ComponentPeer* ret = this;
-    while (ret->topLevelParentPeer != nullptr)
-        ret = ret->topLevelParentPeer;
+    while (ret->floatingChildPeerParent != nullptr)
+        ret = ret->floatingChildPeerParent;
 
     return ret;
 }
@@ -392,7 +392,7 @@ bool ComponentPeer::isAncestorOf (juce::ComponentPeer* possibleDescendant) const
 {
     while (possibleDescendant != nullptr)
     {
-        possibleDescendant = possibleDescendant->topLevelParentPeer;
+        possibleDescendant = possibleDescendant->floatingChildPeerParent;
 
         if (possibleDescendant == this)
             return true;
@@ -401,18 +401,18 @@ bool ComponentPeer::isAncestorOf (juce::ComponentPeer* possibleDescendant) const
     return false;
 }
 
-ComponentPeer* ComponentPeer::getTopLevelParentPeer() const noexcept
+ComponentPeer* ComponentPeer::getFloatingChildPeerParent() const noexcept
 {
-    return topLevelParentPeer;
+    return floatingChildPeerParent;
 }
 
 void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPeer* other)
 {
     if (this->isAlwaysOnTop() == other->isAlwaysOnTop())
     {
-        if (topLevelParentPeer != nullptr)
+        if (floatingChildPeerParent != nullptr)
         {
-            auto& peerList = topLevelParentPeer->topLevelChildPeerList;
+            auto& peerList = floatingChildPeerParent->floatingChildPeerList;
 
             peerList.remove (peerList.indexOf (this));
             peerList.insert (peerList.indexOf (other), this);
@@ -424,17 +424,11 @@ void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPe
     }
 }
 
-void check (ComponentPeer* THIS, ComponentPeer* OTHER)
-{
-    int x = 2;
-
-}
-
 void ComponentPeer::toBehind (juce::ComponentPeer* other)
 {                                                                                       // the macOS implementation of toBehindInternal doesn't do anything if this peer isn't visible, so I need to reflect that behavior here as well
     if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this || ! (this->isShowing()))
         return;
-    else if (this->topLevelParentPeer == other->topLevelParentPeer) { // if the two peers are actually siblings and not just cousins, we can use this faster path
+    else if (this->floatingChildPeerParent == other->floatingChildPeerParent) { // if the two peers are actually siblings and not just cousins, we can use this faster path
         callToBehindInternalAndRearrangeChildList (other);
     }
     else
@@ -442,17 +436,16 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
         ComponentPeer* componentToInsert = this;
 
         juce::Array<ComponentPeer*> ancestorsOfThisList;
-        this->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
+        this->forEachFloatingChildPeerAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
         {
             ancestorsOfThisList.add (peer);
         });
 
-        bool leastCommonAncestorFound = other->forEachTopLevelAncestorPeerFromThisToRoot ([&](ComponentPeer* ancestorOfOther)
+        bool leastCommonAncestorFound = other->forEachFloatingChildPeerAncestorPeerFromThisToRoot ([&](ComponentPeer* ancestorOfOther)
         {
             for (auto* ancestorOfThis : ancestorsOfThisList) // linear search is faster than a hash table for small inputs
             {
-                check(ancestorOfThis, ancestorOfOther);
-                if (ancestorOfThis->topLevelParentPeer == ancestorOfOther->topLevelParentPeer) // check for LCA
+                if (ancestorOfThis->floatingChildPeerParent == ancestorOfOther->floatingChildPeerParent) // check for LCA
                 {
                     // LCA found, now call toBehindInternal on the two direct children of the LCA that are ancestors of the original two peers
                     ancestorOfThis->callToBehindInternalAndRearrangeChildList (ancestorOfOther);
@@ -609,15 +602,15 @@ void ComponentPeer::handleBroughtToFront()
 
     auto currentPeer = this;
 
-    while (auto currentPeerParent = currentPeer->topLevelParentPeer) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
+    while (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
     {
-        auto indexOfCurrentPeerInParentPeerList = currentPeerParent->topLevelChildPeerList.indexOf (currentPeer);
+        auto indexOfCurrentPeerInParentPeerList = currentPeerParent->floatingChildPeerList.indexOf (currentPeer);
         jassert(indexOfCurrentPeerInParentPeerList != -1);
 
-        currentPeerParent->topLevelChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
-        currentPeerParent->insertIntoTopLevelChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
+        currentPeerParent->floatingChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
+        currentPeerParent->insertIntoFloatingChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
 
-        currentPeer = currentPeer->topLevelParentPeer;
+        currentPeer = currentPeer->floatingChildPeerParent;
     }
 
     #ifdef __APPLE__
@@ -626,10 +619,10 @@ void ComponentPeer::handleBroughtToFront()
         // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
         // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
 
-        if (topLevelParentPeer != nullptr)
+        if (floatingChildPeerParent != nullptr)
         {
-            clearNativeTopLevelParent();
-            setNativeTopLevelParent (topLevelParentPeer);
+            clearFloatingChildPeerNativeParent();
+            setFloatingChildPeerNativeParent (floatingChildPeerParent);
         }
     #endif
 }
@@ -770,14 +763,14 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
 
-    // TODO: reimplement using forEachTopLevelAncestorPeerFromRootToThis
-    if (! shouldBeMinimised && topLevelParentPeer != nullptr && topLevelParentPeer->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
+    // TODO: reimplement using forEachFloatingChildPeerAncestorPeerFromRootToThis
+    if (! shouldBeMinimised && floatingChildPeerParent != nullptr && floatingChildPeerParent->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
     {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
         std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
 
         { // limit the scope of peer
             ComponentPeer* peer = this;
-            while (((peer = peer->topLevelParentPeer) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
+            while (((peer = peer->floatingChildPeerParent) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
                 peersToProcess.push (peer);
         }
 
@@ -791,27 +784,19 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
         }
     }
 
-    insideSetVisibleRecursivelyWithoutSettingFlagCall = true; // TODO: this name is inaccurate now. Change it
+    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true; // TODO: this name is inaccurate now. Change it // Nasty, I know, but this is necessary in order to work around quirks of the windowProc on windows
 
     if (! shouldBeMinimised) // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
     {                        // and postorder if we're minimising it.
         setMinimisedWithoutSettingFlag (shouldBeMinimised);
     }
 
-   // #ifdef __APPLE__ // TODO: irrelevant now, delete
-    //    setMinimisedWithoutSettingFlag (shouldBeMinimised); // miniaturisation on macOS works differently from minimisation on windows and most linux desktop environments
-                                                            // miniaturised windows are visible as individual icons on the dock, so recursively calling setMinimised (which does the right thing on windows and linux)
-                                                            // would spit every window in the hierarchy onto the users dock. This is not desirable, so we avoid the recursive setMinimised calls on macOS
-    //#else
-        // setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised);
-        // setMinimisedWithoutSettingFlag(shouldBeMinimised);
-        auto topLevelChildPeerListCopy = topLevelChildPeerList;
-        for (ComponentPeer* peer : topLevelChildPeerListCopy)
-        {
-            if (shouldBeMinimised || ! peer->isInherentlyHidden())
-                peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING
-        }
-    //#endif
+    auto floatingChildPeerListCopy = floatingChildPeerList;
+    for (ComponentPeer* peer : floatingChildPeerListCopy)
+    {
+        if (shouldBeMinimised || ! peer->isInherentlyHidden())
+            peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING // Seems to work. I have no idea what I was on about. Maybe I changed the code but forgot to remove the comment
+    }
 
     if (shouldBeMinimised)
     {
@@ -820,7 +805,7 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
 
     internalIsInherentlyMinimised = shouldBeMinimised;
 
-    insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -828,7 +813,7 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
     if (! shouldBeMinimised)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
         setMinimisedWithoutSettingFlag (shouldBeMinimised); // and postorder if we're minimising it.
 
-    for (auto* peer : topLevelChildPeerList)
+    for (auto* peer : floatingChildPeerList)
     {                                                                      // don't accidentally deminimise an inherently minimised window
         peer->setMinimisedRecursivelyWithoutSettingFlag (shouldBeMinimised || peer->isInherentlyMinimised());
     }
@@ -839,16 +824,16 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
-    insideSetVisibleRecursivelyWithoutSettingFlagCall = true;
-    //ScopedValueSetter svs (insideSetVisibleRecursivelyWithoutSettingFlagCall, false);
+    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true;
+    // ScopedValueSetter svs (insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall, false); doesn't work for some reason
 
     if (shouldBeVisible)                {
         setVisibleWithoutSettingFlag (true);   // and postorder if we're hiding it.
     }                   // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
 
-    auto topLevelChildPeerListCopy = topLevelChildPeerList; // we need to make a copy because the operations we call in the loop cause handleBroughtToFront to get called,
+    auto floatingChildPeerListCopy = floatingChildPeerList; // we need to make a copy because the operations we call in the loop cause handleBroughtToFront to get called,
                                                             // which will cause the list to be reordered while we're still using it
-    for (auto* peer : topLevelChildPeerListCopy)
+    for (auto* peer : floatingChildPeerListCopy)
     {                                                                     // don't accidentally show an inherently hidden window
        if (! peer->isMinimised())
             peer->setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible && ! peer->isInherentlyHidden());
@@ -857,13 +842,13 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
     if (! shouldBeVisible)
         setVisibleWithoutSettingFlag (false);
 
-    insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 bool ComponentPeer::isMinimisedOrHasMinimisedAncestor() const noexcept
 {
-    return topLevelParentPeer == nullptr ? isInherentlyMinimised()
-                                         : isInherentlyMinimised() || topLevelParentPeer->isMinimisedOrHasMinimisedAncestor();
+    return floatingChildPeerParent == nullptr ? isInherentlyMinimised()
+                                         : isInherentlyMinimised() || floatingChildPeerParent->isMinimisedOrHasMinimisedAncestor();
 }
 
 bool ComponentPeer::isInherentlyMinimised() const noexcept
@@ -878,9 +863,9 @@ bool ComponentPeer::isInherentlyHidden() const noexcept
 
 bool ComponentPeer::isHiddenOrHasHiddenAncestor() const noexcept
 {
-    if(topLevelParentPeer != nullptr)
+    if(floatingChildPeerParent != nullptr)
     {
-        return topLevelParentPeer->isAlwaysOnTop() || topLevelParentPeer->isHiddenOrHasHiddenAncestor();
+        return floatingChildPeerParent->isAlwaysOnTop() || floatingChildPeerParent->isHiddenOrHasHiddenAncestor();
     }
     else
     {
@@ -1034,7 +1019,7 @@ void ComponentPeer::setVisible (bool shouldBeVisible)
 {
     if (shouldBeVisible)
     {
-        forEachTopLevelAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
+        forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
         {
             if (! peer->isShowing())
             {
@@ -1046,13 +1031,13 @@ void ComponentPeer::setVisible (bool shouldBeVisible)
 
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 
-    bool anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall = false;
-    forEachTopLevelAncestorPeerFromThisToRoot([&] (ComponentPeer* peer)
+    bool anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    forEachFloatingChildPeerAncestorPeerFromThisToRoot([&] (ComponentPeer* peer)
     {
-        anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall = anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall || peer->insideSetVisibleRecursivelyWithoutSettingFlagCall;
+        anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall || peer->insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall;
     });
 
-    if (! anyAncestorsAreInsideSetVisibleRecursivelyWithoutSettingFlagCall)
+    if (! anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall)
         internalIsInherentlyHidden = ! shouldBeVisible;
 }
 

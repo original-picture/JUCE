@@ -311,9 +311,9 @@ public:
     ~NSViewComponentPeer() override
     {
         // Unfortunately, this line is duplicated in the destructor of every implementation class derived from ComponentPeer.
-        // I really want to find a way to do this without code duplication, but clearNativeTopLevelParent is virtual, which means I can't call it from ComponentPeer's destructor,
+        // I really want to find a way to do this without code duplication, but clearFloatingChildPeerNativeParent is virtual, which means I can't call it from ComponentPeer's destructor,
         // so I'm not sure how else to do this
-        doTopLevelChildPeerCleanup();
+        doFloatingChildPeerCleanup();
 
         scopedObservers.clear();
 
@@ -357,10 +357,10 @@ public:
                 --insideToFrontCall;
                 handleBroughtToFront();
 
-                if (topLevelParentPeer != nullptr)
+                if (floatingChildPeerParent != nullptr)
                 {
-                    clearNativeTopLevelParent();                         // workaround. For some reason, toggling visibility makes the system temporarily "forget" the parent/child relationship of the toggled window,
-                    setNativeTopLevelParent (topLevelParentPeer); // clearing and resetting the parent window fixes this
+                    clearFloatingChildPeerNativeParent();                         // workaround. For some reason, toggling visibility makes the system temporarily "forget" the parent/child relationship of the toggled window,
+                    setFloatingChildPeerNativeParent (floatingChildPeerParent); // clearing and resetting the parent window fixes this
                 }
             }
             else
@@ -624,7 +624,7 @@ public:
         return true;
     }
 
-    void setNativeTopLevelParent (ComponentPeer* parent) override
+    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (parent))
         {
@@ -636,9 +636,9 @@ public:
         }
     }
 
-    virtual void clearNativeTopLevelParent() override
+    virtual void clearFloatingChildPeerNativeParent() override
     {
-        if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
+        if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (floatingChildPeerParent))
         {
             [parentNSViewPeer->window removeChildWindow:this->window];
         }
@@ -720,20 +720,20 @@ public:
                 [window orderWindow: NSWindowBelow
                          relativeTo: [otherPeer->window windowNumber]];
 
-                if (topLevelParentPeer != nullptr)
+                if (floatingChildPeerParent != nullptr)
                 {
-                    auto parentPeer = dynamic_cast<NSViewComponentPeer*>(topLevelParentPeer);
+                    auto parentPeer = dynamic_cast<NSViewComponentPeer*>(floatingChildPeerParent);
                     jassert (parentPeer);
 
-                    auto& childPeerList = parentPeer->topLevelChildPeerList;
+                    auto& childPeerList = parentPeer->floatingChildPeerList;
 
                     for (auto i = childPeerList.indexOf (this); i < childPeerList.size(); ++i) // we need to do the unparent and reparent workaround for this peer and all of its siblings that should be in front of it
                     {
                         auto currentPeer = dynamic_cast<NSViewComponentPeer*>(childPeerList[i]);
                         jassert (currentPeer);
 
-                        currentPeer->clearNativeTopLevelParent();
-                        currentPeer->setNativeTopLevelParent (parentPeer);
+                        currentPeer->clearFloatingChildPeerNativeParent();
+                        currentPeer->setFloatingChildPeerNativeParent (parentPeer);
                     }
                 }
             }
@@ -1269,7 +1269,7 @@ public:
 
     void resignKeyWindow()
     {
-        if (isInherentlyAlwaysOnTop() && (topLevelParentPeer != nullptr) && ! isAlwaysOnTopByAncestor())
+        if (isInherentlyAlwaysOnTop() && (floatingChildPeerParent != nullptr) && ! isAlwaysOnTopByAncestor())
         {                                            // workaround. If we don't do this, repeated alt+tabbing on and off of an always on top child with a not always on top parent
             setAlwaysOnTopWithoutSettingFlag (true); // will cause the always on top parent to disappear (which should never happen)
         }
@@ -1711,21 +1711,21 @@ public:
         return redirectKeyDown (ev);
     }
 
-    // I had to write this and didDeminiaturize because I needed access to topLevelParentPeer which is a protected member of ComponentPeer
+    // I had to write this and didDeminiaturize because I needed access to floatingChildPeerParent which is a protected member of ComponentPeer
     void willMiniaturize()
     {
         setMinimised (true); // we have to call this manually
 
-        if(topLevelParentPeer != nullptr)
+        if(floatingChildPeerParent != nullptr)
         {
-            if (! topLevelChildPeerList.isEmpty()) /// !!!! THIS HAS TO HAPPEN BEFORE THE clearNativeTopLevelParent() CALL BELOW
+            if (! floatingChildPeerList.isEmpty()) /// !!!! THIS HAS TO HAPPEN BEFORE THE clearFloatingChildPeerNativeParent() CALL BELOW
             {                                      /// !!!! IF YOU TRY TO DO IT THE OTHER WAY AROUND, MINIMIZING A WINDOW THAT HAS A PARENT AND CHILDREN WILL CAUSE THE WINDOW'S PARENT TO ERRONEOUSLY MINIMIZE AS WELL
                                                    /// !!!! I have no idea why this happens. Yes, it sucks that things are sequentially coupled like this. Get mad at apple, not me
                 grabFocus(); // this is a fix for a bug where attempting to minimise a child window that also has its own children and is NOT key will fail (it gets spat out and deminimised immediately)
                              // for some reason the bug doesn't occur with windows that have no parent or no children
             }
 
-            clearNativeTopLevelParent(); // for some reason, minimising a child window minimises its parent too.
+            clearFloatingChildPeerNativeParent(); // for some reason, minimising a child window minimises its parent too.
                                          // So as a workaround, we can unparent the window before it minimises, and then reparent it when it gets restored
         }
     }
@@ -1734,11 +1734,11 @@ public:
     {
         setMinimised (false); // we have to call this manually
 
-        if(topLevelParentPeer != nullptr)
+        if(floatingChildPeerParent != nullptr)
         {
-            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (topLevelParentPeer))
+            if(auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (floatingChildPeerParent))
             {
-                setNativeTopLevelParent (parentNSViewPeer);
+                setFloatingChildPeerNativeParent (parentNSViewPeer);
             }
             else
             {

@@ -378,18 +378,18 @@ public:
     */
     bool isInherentlyAlwaysOnTop() const noexcept;
 
-    int getNumTopLevelChildPeers() const noexcept;
+    int getNumFloatingChildPeers() const noexcept;
 
     /** Returns the number of top level child peers that this peer is a parent of.
         @see getChildren, getChildComponent, getIndexOfChildComponent
     */
-    ComponentPeer* getTopLevelChildPeer (int index) const noexcept;
+    ComponentPeer* getFloatingChildPeer (int index) const noexcept;
 
-    const Array<ComponentPeer*>& getTopLevelChildren() const noexcept { return topLevelChildPeerList; }
+    const Array<ComponentPeer*>& getFloatingChildren() const noexcept { return floatingChildPeerList; }
 
     /** Make callback return true in order to early out */
     template <typename Callback>
-    bool forEachTopLevelAncestorPeerFromThisToRoot (Callback&& callback)
+    bool forEachFloatingChildPeerAncestorPeerFromThisToRoot (Callback&& callback)
     {
         auto currentPeer = this;
 
@@ -403,22 +403,22 @@ public:
             else
                 callback (currentPeer);
         }
-        while ((currentPeer = currentPeer->topLevelParentPeer) != nullptr);
+        while ((currentPeer = currentPeer->floatingChildPeerParent) != nullptr);
 
         return false;
     }
 
     template <typename Callback>
-    bool forEachTopLevelAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
+    bool forEachFloatingChildPeerAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
     {
         Array<ComponentPeer*> peersToProcess; // use Array as a stack because I don't want to have to include <stack>
 
         { // limit the scope of peer
-            ComponentPeer* peer = (processThisPointer ? this : this->topLevelParentPeer);
+            ComponentPeer* peer = (processThisPointer ? this : this->floatingChildPeerParent);
             while (peer != nullptr)
             {
                 peersToProcess.add (peer); // push this and all of its ancestors onto the stack
-                peer = peer->topLevelParentPeer;
+                peer = peer->floatingChildPeerParent;
             }
         }
 
@@ -440,27 +440,26 @@ public:
     }
         /*
 
-        int getIndexOfTopLevelChildPeer(const ComponentPeer* child) const noexcept;
+        int getIndexOfFloatingChildPeer(const ComponentPeer* child) const noexcept;
 
 
 
         Component* findChildWithID (uint32 componentID) const noexcept;
 */
-    bool addTopLevelChildPeer (ComponentPeer& child, int zOrder = -1);
+    bool addFloatingChildPeer (ComponentPeer& child, int zOrder = -1);
 
-    void removeTopLevelChildPeer (ComponentPeer* childToRemove);
+    void removeFloatingChildPeer (ComponentPeer* childToRemove);
 
-    ComponentPeer* removeTopLevelChildPeer (int childIndexToRemove);
+    ComponentPeer* removeFloatingChildPeer (int childIndexToRemove);
 
-    void removeAllTopLevelChildren();
+    void removeAllFloatingChildren();
 
-    /** Returns the ancestor of this peer that has no parent, or this peer, if this peer itself has no parent
-     */
+    /** Returns the ancestor of this peer that has no parent, or this peer, if this peer itself has no parent. */
     ComponentPeer* getTopLevelPeer() noexcept;
 
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
 
-    ComponentPeer* getTopLevelParentPeer() const noexcept;
+    ComponentPeer* getFloatingChildPeerParent() const noexcept;
 /*
     Component* getTopLevelPeer() const noexcept;
 
@@ -471,8 +470,12 @@ public:
     /** Brings the window to the top, optionally also giving it keyboard focus. */
     virtual void toFront (bool takeKeyboardFocus) = 0;
 
-    /** Moves the window to be just behind another one. */
-    void toBehind (ComponentPeer* ancestorOfThis);
+    /** Moves the window to be just behind another one.
+        If this peer and other are cousins, not direct siblings, then the lowest common ancestor of the two peers is found,
+        and the child of the LCA that is an ancestor of this peer is moved behind the child of the LCA that is an ancestor of other.
+        Does nothing if this peer is an ancestor of other, or if other is an ancestor of this.
+    */
+    void toBehind (ComponentPeer* other);
 
     /** Called when the window is brought to the front, either by the OS or by a call
         to toFront().
@@ -717,18 +720,18 @@ protected:
     /**
      * This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.
     */
-    virtual void setNativeTopLevelParent (ComponentPeer* parent) = 0;
+    virtual void setFloatingChildPeerNativeParent (ComponentPeer* parent) = 0;
 
     /**
-     * Undoes a native parent/child relationship created by setNativeTopLevelParent.
+     * Undoes a native parent/child relationship created by setFloatingChildPeerNativeParent.
     */
-    virtual void clearNativeTopLevelParent() = 0;
+    virtual void clearFloatingChildPeerNativeParent() = 0;
 
     // called in the destructors of derived classes (HWNDComponentPeer and friends)
     // we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
     // and by the time we reach ~ComponentPeer it's already too late
     // also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
-    void doTopLevelChildPeerCleanup();
+    void doFloatingChildPeerCleanup();
 
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
@@ -749,12 +752,12 @@ protected:
     Style style = Style::automatic;
 
     virtual bool isAttachedToAnotherWindow() = 0;
-    ComponentPeer* topLevelParentPeer = nullptr;
-    Array<ComponentPeer*> topLevelChildPeerList;
+    ComponentPeer* floatingChildPeerParent = nullptr;
+    Array<ComponentPeer*> floatingChildPeerList;
     bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
     bool internalIsInherentlyMinimised   = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
     bool internalIsInherentlyHidden      = false;
-    bool insideSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
 private:
     //==============================================================================
@@ -803,17 +806,17 @@ private:
      *
      * @param childToBe
      */
-    void insertIntoTopLevelChildPeerList (ComponentPeer* childToBe, int zOrder);
+    void insertIntoFloatingChildPeerList (ComponentPeer* childToBe, int zOrder);
 
     /**
      *
      * @param childIndexToRemove    don't like that I have to do this,
-     *                              but clearNativeTopLevelParent is virtual,
+     *                              but clearFloatingChildPeerNativeParent is virtual,
      *                              so we need to make sure we don't call it from ComponentPeer's destructor
     */
-    ComponentPeer* internalRemoveTopLevelChildPeer (ComponentPeer* childToRemove, bool shouldCallClearNativeTopLevelParent);
+    ComponentPeer* internalRemoveFloatingChildPeer (ComponentPeer* childToRemove, bool shouldCallclearFloatingChildPeerNativeParent);
 
-    ComponentPeer* internalRemoveTopLevelChildPeer (int childIndexToRemove, bool shouldCallClearNativeTopLevelParent);
+    ComponentPeer* internalRemoveFloatingChildPeer (int childIndexToRemove, bool shouldCallclearFloatingChildPeerNativeParent);
 
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse = nullptr;
