@@ -182,8 +182,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * also attempting to minimise the restored window doesn't minimise it, but does fix the incorrect rendering
   * also moving the window fixes the rendering
 - [X] toggling always on top can switch the z-order of child windows (because the order in which `setAlwaysOnTop` is called on children is arbitrary)
-  * fixed by extracting the insertion code from `addTopLevelChildPeer` into a private helper function and calling it from `ComponentPeer::handleFocusGained`
-    - [ ] was this a valid fix though? Does `handleFocusGained` getting called imply 
+  * fixed by extracting the insertion code from `addTopLevelChildPeer` into a private helper function and calling it from `ComponentPeer::handleBroughtToFront`
 - [ ] on ubuntu, after adding the new recursive hiding code, there's a little flicker when restoring a minimised window from the taskbar
 - [ ] on ubuntu, after unhiding a window with a child, both the parent window and the child window will have a highlighted title bar,
       implying that both have focus??
@@ -204,7 +203,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] on linux, `setVisible (true)` will erroneously cause windows that don't have their `windowAppearsOnTaskbar` flag set to appear on the taskbar
   * fixed by just calling `setAppearsOnTaskbar` in `setVisible` 
 - [X] on macOS, unhiding a parent window with a miniaturised child with erroneously deminiaturise the child
-- [ ] on ubuntu, setting a window as always on top rearranges child windows
+- [X] on ubuntu, setting a window as always on top rearranges child windows
+  - it turns out `handleBroughtToFront` wasn't getting triggered when it should have been. I added a fix in `juce_XWindowSystem_linux.cpp`.
+    It seems to work on ubuntu, but it might break on other distros that use different window managers
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
@@ -265,8 +266,9 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] come up with a comprehensive list of manual tests to ensure behavior is correct
 - [ ] get rid of the `topLevelParent/ChildPeer` naming convention and just use parent/child
 - [ ] update the value of isInherentlyMinimised in setVisible and update the value of isInherentlyHidden in setMinimised
-- [ ] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
-  - it's keeping track of peers globally, but it doesn't look like it cares about z-order
+- [X] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
+  - it's keeping track of peers globally, but it doesn't look like it cares about z-order, so it's fine
+- [ ] add dummy implementations of all new virtual functions to the android and ios implementations so that the build doesn't fail on those platforms
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)
