@@ -427,9 +427,9 @@ public:
             auto* peer = peersToProcess.getLast();
             peersToProcess.removeLast();
 
-            if constexpr (std::is_convertible_v<decltype(callback(peer)), bool>)
+            if constexpr (std::is_convertible_v<decltype(callback (peer)), bool>)
             {
-                if (callback)
+                if (callback (peer))
                     return true;
             }
             else
@@ -732,6 +732,8 @@ protected:
     // and by the time we reach ~ComponentPeer it's already too late
     // also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
     void doFloatingChildPeerCleanup();
+
+    void makeAllAncestorsVisibleAndNotMinimised();
 
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);

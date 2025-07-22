@@ -245,13 +245,11 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * `setAlwaysOnTop` comes to mind (always fails and returns false on X11)
 
 # Immediate todo
-- [ ] implement `toBehind`
-  - [ ] rearrange child peer lists
-    - [ ] figure out if this needs to be done recursively
-    - [ ] fix linux implementation
-- [ ] implement `toFront`
-9 * calls `toFrontOfSiblings` recursively and then calls `toFront` on the top level window
-- [ ] add a member function `toFrontOfSiblings`
+- [X] implement `toBehind`
+  - [X] rearrange child peer lists
+    - [X] figure out if this needs to be done recursively
+    - [X] fix linux implementation
+- [X] implement `toFront`
 - [X] have minimisation hide child windows instead of minimising them   
 - [X] an internal `isInherentlyHidden` attribute is necessary
 - [ ] investigate and fix always on top related minimisation bugs on windows
@@ -261,20 +259,20 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   * Note: child windows always skip the taskbar on macOS (I think)
 - [ ] ~~make it illegal to~~ strongly advise people to not minimise a ~~child~~ any window that doesn't show on the taskbar 
 - [ ] finish documentation
-- [ ] figure out if the interaction between hiding and minimising causes issues
 - [X] rearrange child peer lists when a window is brought to front
 - [ ] that's it?
 - [ ] remove dead code
 - [ ] make sure all the code conforms to JUCE's style guide
-- [ ] implement `forEachFloatingChildPeerAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
+- [X] implement `forEachFloatingChildPeerAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
 - [X] make sure the minimisation and hidden state of the parent are applied when adding a child peer
 - [ ] come up with a comprehensive list of manual tests to ensure behavior is correct
-- [ ] get rid of the `topLevelParent/ChildPeer` naming convention and just use parent/child
 - [ ] update the value of isInherentlyMinimised in setVisible and update the value of isInherentlyHidden in setMinimised
 - [X] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
   - it's keeping track of peers globally, but it doesn't look like it cares about z-order, so it's fine
 - [ ] add dummy implementations of all new virtual functions to the android and ios implementations so that the build doesn't fail on those platforms
 - [ ] add more helper functions to ComponentPeer
+- [ ] make sure visibility and minimisation status play nicely together
+  - it could cause issues if these two states are considered mutually exclusively on some platforms but not on others
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)

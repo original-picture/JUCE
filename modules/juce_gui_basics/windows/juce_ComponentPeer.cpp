@@ -420,7 +420,7 @@ void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPe
         }
 
         this->toBehindInternal(other); // it's important that this happens AFTER the above code,
-                                       // because the macOS implementation has to do a workaround that needs to see the parent's child peer list in the correct order
+                                       // because the macOS implementation has to do a workaround that needs to see the parent's child peer list in the updated order
     }
 }
 
@@ -762,50 +762,39 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 //=============================================================================
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
+    makeAllAncestorsVisibleAndNotMinimised();
 
-    // TODO: reimplement using forEachFloatingChildPeerAncestorPeerFromRootToThis
-    if (! shouldBeMinimised && floatingChildPeerParent != nullptr && floatingChildPeerParent->isMinimised()) // this code makes sure that a peer's parents are deminimised before it itself gets deminimised
-    {                                                                                              // basically, if you deminimise a window that has a minimised parent, you have to walk up the window hierarchy until you find either a window that isn't minimised or you reach the root of the hierarchy,
-        std::stack<ComponentPeer*> peersToProcess;                                                 // pushing peers onto a stack as you go.
+    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true; // Nasty, I know, but this is necessary in order to work around quirks of how windowProc behaves in the windows implementation
 
-        { // limit the scope of peer
-            ComponentPeer* peer = this;
-            while (((peer = peer->floatingChildPeerParent) != nullptr) && peer->isMinimised()) // Note that "this" does NOT get pushed to the stack. this peer gets processed separately below
-                peersToProcess.push (peer);
-        }
-
-        while (! peersToProcess.empty()) // then you pop each one off the stack and deminimise it.
-        {
-            auto* peer = peersToProcess.top();
-            peersToProcess.pop();
-
-            // TODO: peer->setVisible (true) // (and test it)
-            peer->setMinimised (false);
-        }
-    }
-
-    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true; // TODO: this name is inaccurate now. Change it // Nasty, I know, but this is necessary in order to work around quirks of the windowProc on windows
-
-    if (! shouldBeMinimised) // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
-    {                        // and postorder if we're minimising it.
-        setMinimisedWithoutSettingFlag (shouldBeMinimised);
-    }
+    if (! shouldBeMinimised)                                // This if statement and the if statement at the end of the function make the traversal preorder if we're restoring the window (shouldBeMinimised is false),
+        setMinimisedWithoutSettingFlag (shouldBeMinimised); // and postorder if we're minimising it.
 
     auto floatingChildPeerListCopy = floatingChildPeerList;
     for (ComponentPeer* peer : floatingChildPeerListCopy)
     {
         if (shouldBeMinimised || ! peer->isInherentlyHidden())
-            peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised); // THIS IS WRONG. THIS IS JUST FOR TESTING // Seems to work. I have no idea what I was on about. Maybe I changed the code but forgot to remove the comment
+            peer->setVisibleRecursivelyWithoutSettingFlag (! shouldBeMinimised);
     }
 
     if (shouldBeMinimised)
-    {
         setMinimisedWithoutSettingFlag (shouldBeMinimised);
-    }
+
 
     internalIsInherentlyMinimised = shouldBeMinimised;
 
     insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+}
+
+void ComponentPeer::makeAllAncestorsVisibleAndNotMinimised()
+{
+    forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
+    {
+        if (! peer->isShowing())
+        {
+            peer->setVisible (true);
+            peer->setMinimised (false);
+        }
+    }, false);
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -848,7 +837,7 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
 bool ComponentPeer::isMinimisedOrHasMinimisedAncestor() const noexcept
 {
     return floatingChildPeerParent == nullptr ? isInherentlyMinimised()
-                                         : isInherentlyMinimised() || floatingChildPeerParent->isMinimisedOrHasMinimisedAncestor();
+                                              : isInherentlyMinimised() || floatingChildPeerParent->isMinimisedOrHasMinimisedAncestor();
 }
 
 bool ComponentPeer::isInherentlyMinimised() const noexcept
@@ -1017,17 +1006,7 @@ void ComponentPeer::handleUserClosingWindow()
 
 void ComponentPeer::setVisible (bool shouldBeVisible)
 {
-    if (shouldBeVisible)
-    {
-        forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
-        {
-            if (! peer->isShowing())
-            {
-                peer->setVisible (true);
-                peer->setMinimised (false);
-            }
-        }, false);
-    }
+    makeAllAncestorsVisibleAndNotMinimised();
 
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 
