@@ -206,6 +206,10 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] on ubuntu, setting a window as always on top rearranges child windows
   - it turns out `handleBroughtToFront` wasn't getting triggered when it should have been. I added a fix in `juce_XWindowSystem_linux.cpp`.
     It seems to work on ubuntu, but it might break on other distros that use different window managers
+- [ ] `grabFocus` doesn't seem to do anything on macOS,
+  - but I don't think it's my fault
+- [ ] setVisible changes z order on macOS
+  - children are reordered correctly, so I think it's fine 
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window
