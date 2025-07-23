@@ -227,7 +227,7 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
         }
     }
 
-    // there is no flag member variable for isAlwaysOnTopByAncestor
+    // there is no flag member variable for hasInherentlyAlwaysOnTopAncestor
     // an always on top ancestor is checked for recursively each time, without any caching
 }
 
@@ -260,34 +260,14 @@ void ComponentPeer::insertIntoFloatingChildPeerList (ComponentPeer* childToBe, i
     floatingChildPeerList.insert (zOrder, childToBe);
 }
 
-
-bool ComponentPeer::isAlwaysOnTop() const noexcept
-{          // short circuit evaluation allows us to avoid calling isAlwaysOnTopByAncestor() if we don't have to
-    return isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor();
-                                        // indirect recursion (isAlwaysOnTopByAncestor() can call isAlwaysOnTop())
-}
-
-bool ComponentPeer::isAlwaysOnTopByAncestor() const noexcept
-{
-
-    if(floatingChildPeerParent != nullptr)
-    {
-        return floatingChildPeerParent->isAlwaysOnTop(); // indirect recursion (isAlwaysOnTop() can call isAlwaysOnTopByAncestor())
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
-{
-    return internalIsInherentlyAlwaysOnTop;
-}
-
 int ComponentPeer::getNumFloatingChildPeers() const noexcept
 {
     return floatingChildPeerList.size();
+}
+
+ComponentPeer* ComponentPeer::getFloatingChildPeer(int index) const noexcept
+{
+    return floatingChildPeerList[index];
 }
 
 bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
@@ -296,7 +276,7 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
     jassert(! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
 
                                                   // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
-                                                  // For example, nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous constructs
+                                                  // For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts
                                                   // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
                                                   // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
                                                   // then you probably want the functionality of one of them, but just don't know which one
@@ -325,27 +305,11 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
     return false;
 }
 
-void ComponentPeer::removeFloatingChildPeer (ComponentPeer* childToRemove)
-{
-    internalRemoveFloatingChildPeer (childToRemove, true);
-}
-
 ComponentPeer* ComponentPeer::removeFloatingChildPeer (int childIndexToRemove)
-{
-    return internalRemoveFloatingChildPeer (childIndexToRemove, true);
-}
-
-ComponentPeer* ComponentPeer::internalRemoveFloatingChildPeer (ComponentPeer* childToRemove, bool shouldCallclearFloatingChildPeerNativeParent)
-{
-    return internalRemoveFloatingChildPeer(floatingChildPeerList.indexOf(childToRemove), shouldCallclearFloatingChildPeerNativeParent);
-}
-
-ComponentPeer* ComponentPeer::internalRemoveFloatingChildPeer (int childIndexToRemove, bool shouldCallclearFloatingChildPeerNativeParent)
 {
     if (auto* child = floatingChildPeerList [childIndexToRemove])
     {
-        if (shouldCallclearFloatingChildPeerNativeParent)
-            child->clearFloatingChildPeerNativeParent();
+        child->clearFloatingChildPeerNativeParent();
 
         child->setAlwaysOnTopRecursivelyWithoutSettingFlag(false);
         child->floatingChildPeerParent = nullptr;
@@ -356,6 +320,11 @@ ComponentPeer* ComponentPeer::internalRemoveFloatingChildPeer (int childIndexToR
     }
 
     return nullptr;
+}
+
+void ComponentPeer::removeFloatingChildPeer (ComponentPeer* childToRemove)
+{
+    removeFloatingChildPeer (floatingChildPeerList.indexOf (childToRemove));
 }
 
 void ComponentPeer::doFloatingChildPeerCleanup()
@@ -370,6 +339,18 @@ void ComponentPeer::removeAllFloatingChildren()
 {
     while (! floatingChildPeerList.isEmpty())
         removeFloatingChildPeer (floatingChildPeerList.size() - 1);
+}
+
+void ComponentPeer::makeAllAncestorsVisibleAndNotMinimised()
+{
+    forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
+                                                        {
+                                                            if (! peer->isShowing())
+                                                            {
+                                                                peer->setVisible (true);
+                                                                peer->setMinimised (false);
+                                                            }
+                                                        }, false);
 }
 
 ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
@@ -753,6 +734,26 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 }
 
 //=============================================================================
+bool ComponentPeer::isAlwaysOnTop() const noexcept {          // short circuit evaluation allows us to avoid calling hasInherentlyAlwaysOnTopAncestor() if we don't have to
+    return isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor();
+}                                       // indirect recursion (hasInherentlyAlwaysOnTopAncestor() can call isAlwaysOnTop())
+
+
+bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
+{
+    return internalIsInherentlyAlwaysOnTop;
+}
+
+bool ComponentPeer::hasInherentlyAlwaysOnTopAncestor() const noexcept
+{
+
+    if(floatingChildPeerParent != nullptr)
+        return floatingChildPeerParent->isAlwaysOnTop(); // indirect recursion
+    else
+        return false;
+}
+
+
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
     makeAllAncestorsVisibleAndNotMinimised();
@@ -776,18 +777,6 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
     internalIsInherentlyMinimised = shouldBeMinimised;
 
     insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
-}
-
-void ComponentPeer::makeAllAncestorsVisibleAndNotMinimised()
-{
-    forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
-    {
-        if (! peer->isShowing())
-        {
-            peer->setVisible (true);
-            peer->setMinimised (false);
-        }
-    }, false);
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)

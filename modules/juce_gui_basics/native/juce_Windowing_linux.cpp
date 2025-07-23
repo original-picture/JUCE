@@ -201,8 +201,8 @@ public:
             if (! (styleFlags & windowAppearsOnTaskbar))
                 XWindowSystem::getInstance()->setAppearsOnTaskbar (windowH, false);
 
-            if (isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor()) // kind of suboptimal performance-wise, because setVisibleWithoutSettingFlag gets called recursively
-                setAlwaysOnTopWithoutSettingFlag (true);                // and then inside it we call isAlwaysOnTopByAncestor which traverses back up the peer hierarchy recursively,
+            if (isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor()) // kind of suboptimal performance-wise, because setVisibleWithoutSettingFlag gets called recursively
+                setAlwaysOnTopWithoutSettingFlag (true);                // and then inside it we call hasInherentlyAlwaysOnTopAncestor which traverses back up the peer hierarchy recursively,
         }                                                               // but I'm just going to not worry about it :P
     }
 

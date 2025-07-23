@@ -92,7 +92,9 @@ public:
                                                                            Ignored if windowAppearsOnTaskbar is set.
                                                                            Note that windows seems to force the first created window onto the toolbar if it doesn't have the WS_EX_TOOLWINDOW style, even if WS_EX_APPWINDOW is not specified.
                                                                            This is usually not an issue in practice, because windowAppearsOnTaskbar is typically only unset for secondary tool windows,
-                                                                           while the main window of the application almost always *does* include windowAppearsOnTaskbar */
+                                                                           while the main window of the application almost always *does* include windowAppearsOnTaskbar.
+                                                                           So only use this flag if you have some primary application window that does show on the taskbar,
+                                                                           and even in that case, only use this flag for secondary windows that get created after the main window */
 
     };
 
@@ -246,6 +248,37 @@ public:
     */
     Rectangle<int> getAreaCoveredBy (const Component& subComponent) const;
 
+
+    /** Sets this window to either be always-on-top or normal.
+        Some kinds of window might not be able to do this, so should return false.
+        If this peer has any floating children, they will become always on top too,
+        and will lose their always on top status when this window loses its always on top status
+        (unless setAlwaysOnTop (true) is called on the children as well).
+        The always on top status of ancestor peers is unaffected
+    */
+    bool setAlwaysOnTop (bool alwaysOnTop);
+
+    /** Returns true if this peer is set to always stay in front of other windows on the desktop.
+        Equivalent to isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor()
+        @see setAlwaysOnTop, hasInherentlyAlwaysOnTopAncestor, isInherentlyAlwaysOnTop
+    */
+    bool isAlwaysOnTop() const noexcept;
+
+    /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
+        Note that hasInherentlyAlwaysOnTopAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, hasInherentlyAlwaysOnTopAncestor
+    */
+    bool isInherentlyAlwaysOnTop() const noexcept;
+
+    /** Returns true if this peer has ancestors that are always on top.
+        Note that hasInherentlyAlwaysOnTopAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+        @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
+    */
+    bool hasInherentlyAlwaysOnTopAncestor() const noexcept;
+
+    bool isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor();
+
+
     /** Minimises the window. Child peers will be minimized recursively. */
     void setMinimised (bool shouldBeMinimised);
 
@@ -368,33 +401,15 @@ public:
     void handlePaint (LowLevelGraphicsContext& contextToPaintTo);
 
     //==============================================================================
-    /** Sets this window to either be always-on-top or normal.
-        Some kinds of window might not be able to do this, so should return false.
-    */
-    bool setAlwaysOnTop (bool alwaysOnTop);
-
-    /** Returns true if this peer is set to always stay in front of other windows on the desktop.
-        Equivalent to isInherentlyAlwaysOnTop() || isAlwaysOnTopByAncestor()
-        @see setAlwaysOnTop, isAlwaysOnTopByAncestor, isInherentlyAlwaysOnTop
-    */
-    bool isAlwaysOnTop() const noexcept;
-
-    /** Returns true if this peer has ancestors that are always on top.
-        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
-        @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
-    */
-    bool isAlwaysOnTopByAncestor() const noexcept;
-
-    /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
-        Note that isAlwaysOnTopByAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
-        @see setAlwaysOnTop, isAlwaysOnTop, isAlwaysOnTopByAncestor
-    */
-    bool isInherentlyAlwaysOnTop() const noexcept;
-
+    /** Returns the number of top level child peers that this peer is a parent of. */
     int getNumFloatingChildPeers() const noexcept;
 
-    /** Returns the number of top level child peers that this peer is a parent of.
-        @see getChildren, getChildComponent, getIndexOfChildComponent
+    /** Returns one of this peer's floating child peers, by it index.
+
+        The peer with index 0 is at the back of the z-order, the one at the
+        front will have index (getNumFloatingChildPeers() - 1).
+
+        If the index is out-of-range, this will return a null pointer.
     */
     ComponentPeer* getFloatingChildPeer (int index) const noexcept;
 
@@ -459,6 +474,26 @@ public:
 
         Component* findChildWithID (uint32 componentID) const noexcept;
 */
+
+    /** Add a floating child peer to this peer.
+
+        A floating child peer will always stay on top of its parent, but not other peers.
+        Floating child peers are useful for implementing secondary tool windows for your application or plugin.
+
+        Note that a parent peer does not own its floating children! Children do not get destroyed when their parent is destroyed.
+
+        Also note that the hierarchical relationship created by the nativeWindowToAttachTo parameter of Component::addToDesktop
+        is different from the hierarchical relationship created by addFloatingChildPeer!
+        Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs.
+        For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts.
+        These two systems are mutually exclusive. So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop
+
+        @param child     the child peer to add. If the component passed-in is already
+                         the child of another component, it'll first be removed from its current parent.
+        @param zOrder    The index in the child-list at which this component should be inserted.
+                         A value of -1 will insert it in front of the others, 0 is the back.
+        @return
+     */
     bool addFloatingChildPeer (ComponentPeer& child, int zOrder = -1);
 
     void removeFloatingChildPeer (ComponentPeer* childToRemove);
@@ -473,11 +508,6 @@ public:
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
 
     ComponentPeer* getFloatingChildPeerParent() const noexcept;
-/*
-    Component* getTopLevelPeer() const noexcept;
-
-    bool isParentOf (const ComponentPeer* possibleChild) const noexcept;*/
-
 
 
     /** Brings the window to the top, optionally also giving it keyboard focus. */
@@ -740,10 +770,11 @@ protected:
     */
     virtual void clearFloatingChildPeerNativeParent() = 0;
 
-    // called in the destructors of derived classes (HWNDComponentPeer and friends)
-    // we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
-    // and by the time we reach ~ComponentPeer it's already too late
-    // also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
+    /** called in the destructors of derived classes (HWNDComponentPeer and friends)
+        we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
+        and by the time we reach ~ComponentPeer it's already too late
+        also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
+    */
     void doFloatingChildPeerCleanup();
 
     void makeAllAncestorsVisibleAndNotMinimised();
@@ -808,7 +839,7 @@ private:
      * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
      *
      * Note to any developers reading this in the future, don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
-     * A workaround in
+     * On every platform I've tested on, "redundant" setAlwaysOnTopWithoutSettingFlag calls were necessary in some circumstances in order to get the correct behavior
     */
     virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
 
@@ -817,21 +848,7 @@ private:
     */
     void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
 
-    /**
-     *
-     * @param childToBe
-     */
     void insertIntoFloatingChildPeerList (ComponentPeer* childToBe, int zOrder);
-
-    /**
-     *
-     * @param childIndexToRemove    don't like that I have to do this,
-     *                              but clearFloatingChildPeerNativeParent is virtual,
-     *                              so we need to make sure we don't call it from ComponentPeer's destructor
-    */
-    ComponentPeer* internalRemoveFloatingChildPeer (ComponentPeer* childToRemove, bool shouldCallclearFloatingChildPeerNativeParent);
-
-    ComponentPeer* internalRemoveFloatingChildPeer (int childIndexToRemove, bool shouldCallclearFloatingChildPeerNativeParent);
 
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse = nullptr;
