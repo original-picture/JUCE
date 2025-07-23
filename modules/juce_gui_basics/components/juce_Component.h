@@ -257,12 +257,6 @@ public:
     */
     bool isAlwaysOnTop() const noexcept;
 
-    bool isTransient() const;
-
-    Component* getTransientForOwner() const;
-
-    void clearTransientFor() const;
-
     //==============================================================================
     /** Returns the x coordinate of the component's left edge.
         This is a distance in pixels from the left edge of the component's parent.
