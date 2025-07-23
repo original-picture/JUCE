@@ -413,67 +413,19 @@ public:
     */
     ComponentPeer* getFloatingChildPeer (int index) const noexcept;
 
-    const Array<ComponentPeer*>& getFloatingChildren() const noexcept { return floatingChildPeerList; }
+    /** Returns the index of this peer in the list of floating child peers.
 
-    /** Make callback return true in order to early out */
-    template <typename Callback>
-    bool forEachFloatingChildPeerAncestorPeerFromThisToRoot (Callback&& callback)
-    {
-        auto currentPeer = this;
+        A value of 0 means it is first in the list (i.e. behind all other peers). Higher
+        values are further towards the front.
 
-        do
-        {
-            if constexpr (std::is_convertible_v<decltype(callback(currentPeer)), bool>)
-            {
-                if (callback (currentPeer))
-                    return true;
-            }
-            else
-                callback (currentPeer);
-        }
-        while ((currentPeer = currentPeer->floatingChildPeerParent) != nullptr);
+        Returns -1 if the component passed-in is not a child of this component.
 
-        return false;
-    }
+        @see getChildren, getNumChildComponents, getChildComponent, addChildComponent, toFront, toBack, toBehind
+    */
+    int getIndexOfFloatingChildPeer (const ComponentPeer* child) const noexcept;
 
-    template <typename Callback>
-    bool forEachFloatingChildPeerAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
-    {
-        Array<ComponentPeer*> peersToProcess; // use Array as a stack because I don't want to have to include <stack>
-
-        { // limit the scope of peer
-            ComponentPeer* peer = (processThisPointer ? this : this->floatingChildPeerParent);
-            while (peer != nullptr)
-            {
-                peersToProcess.add (peer); // push this and all of its ancestors onto the stack
-                peer = peer->floatingChildPeerParent;
-            }
-        }
-
-        while (! peersToProcess.isEmpty()) // then pop each one off the stack and invoke callback on it
-        {
-            auto* peer = peersToProcess.getLast();
-            peersToProcess.removeLast();
-
-            if constexpr (std::is_convertible_v<decltype(callback (peer)), bool>)
-            {
-                if (callback (peer))
-                    return true;
-            }
-            else
-                callback (peer);
-        }
-
-        return false;
-    }
-        /*
-
-        int getIndexOfFloatingChildPeer(const ComponentPeer* child) const noexcept;
-
-
-
-        Component* findChildWithID (uint32 componentID) const noexcept;
-*/
+    /** Returns a reference to the underlying array of child peers. */
+    const Array<ComponentPeer*>& getFloatingChildPeers() const noexcept { return floatingChildPeerList; }
 
     /** Add a floating child peer to this peer.
 
@@ -486,29 +438,67 @@ public:
         is different from the hierarchical relationship created by addFloatingChildPeer!
         Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs.
         For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts.
-        These two systems are mutually exclusive. So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop
+        These two systems are mutually exclusive. So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop.
 
-        @param child     the child peer to add. If the component passed-in is already
-                         the child of another component, it'll first be removed from its current parent.
-        @param zOrder    The index in the child-list at which this component should be inserted.
+        @param child     the child peer to add. If the peer passed-in is already
+                         the child of another peer, it'll first be removed from its current parent.
+        @param zOrder    The index in the child-list at which this peer should be inserted.
                          A value of -1 will insert it in front of the others, 0 is the back.
-        @return
-     */
+        @return          False if the child couldn't be added (e.g., because the platform doesn't support floating child peers)
+    */
+    bool addFloatingChildPeer (ComponentPeer* child, int zOrder = -1);
+
+    /** Returns the floating child peer with the given ID,
+        or nullptr, if this peer doesn't have a child with the given ID
+    */
+    ComponentPeer* findFloatingChildPeerWithID (uint32 targetID) const noexcept;
+
+    /** Add a floating child peer to this peer.
+
+        A floating child peer will always stay on top of its parent, but not other peers.
+        Floating child peers are useful for implementing secondary tool windows for your application or plugin.
+
+        Note that a parent peer does not own its floating children! Children do not get destroyed when their parent is destroyed.
+
+        Also note that the hierarchical relationship created by the nativeWindowToAttachTo parameter of Component::addToDesktop
+        is different from the hierarchical relationship created by addFloatingChildPeer!
+        Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs.
+        For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts.
+        These two systems are mutually exclusive. So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop.
+
+        @param child     the child peer to add. If the peer passed-in is already
+                         the child of another peer, it'll first be removed from its current parent.
+        @param zOrder    The index in the child-list at which this peer should be inserted.
+                         A value of -1 will insert it in front of the others, 0 is the back.
+        @return          False if the child couldn't be added (e.g., because the platform doesn't support floating child peers)
+    */
     bool addFloatingChildPeer (ComponentPeer& child, int zOrder = -1);
 
+    /** Removes one of this peer's child peers.
+
+        If the child passed-in isn't actually a child of this peer (either because
+        it's invalid or is the child of a different parent), then no action is taken.
+
+        Note that removing a child will not delete it! But it's ok to delete a component
+        without first removing it - doing so will automatically remove it and send out the
+        appropriate notifications before the deletion completes.
+
+        @see addFloatingChildPeer, ComponentListener::componentChildrenChanged
+    */
     void removeFloatingChildPeer (ComponentPeer* childToRemove);
 
     ComponentPeer* removeFloatingChildPeer (int childIndexToRemove);
 
     void removeAllFloatingChildren();
 
+    ComponentPeer* getFloatingChildPeerParent() const noexcept;
+
     /** Returns the ancestor of this peer that has no parent, or this peer, if this peer itself has no parent. */
     ComponentPeer* getTopLevelPeer() noexcept;
 
+    /** True if possibleDescendant appears anywhere in this peer's hierarchy.
+         Does not return true if this and possibleDescendant refer to the same peer. */
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
-
-    ComponentPeer* getFloatingChildPeerParent() const noexcept;
-
 
     /** Brings the window to the top, optionally also giving it keyboard focus. */
     virtual void toFront (bool takeKeyboardFocus) = 0;
@@ -760,14 +750,10 @@ protected:
     static void forceDisplayUpdate();
     void callVBlankListeners (double timestampSec);
 
-    /**
-     * This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.
-    */
+    /** This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.*/
     virtual void setFloatingChildPeerNativeParent (ComponentPeer* parent) = 0;
 
-    /**
-     * Undoes a native parent/child relationship created by setFloatingChildPeerNativeParent.
-    */
+    /** Undoes a native parent/child relationship created by setFloatingChildPeerNativeParent. */
     virtual void clearFloatingChildPeerNativeParent() = 0;
 
     /** called in the destructors of derived classes (HWNDComponentPeer and friends)
@@ -776,6 +762,63 @@ protected:
         also it calls pure virtual functions and obviously those can't be called from the destructor of the base class
     */
     void doFloatingChildPeerCleanup();
+
+    /** Make callback return true in order to early out.
+        Alternatively, it can return void if you don't need to early out.
+    */
+    template <typename Callback>
+    bool forEachFloatingChildPeerAncestorPeerFromThisToRoot (Callback&& callback)
+    {
+        auto currentPeer = this;
+
+        do
+        {
+            if constexpr (std::is_convertible_v<decltype(callback(currentPeer)), bool>)
+            {
+                if (callback (currentPeer))
+                    return true;
+            }
+            else
+                callback (currentPeer);
+        }
+        while ((currentPeer = currentPeer->floatingChildPeerParent) != nullptr);
+
+        return false;
+    }
+
+    /** Make callback return true in order to early out.
+        Alternatively, it can return void if you don't need to early out.
+    */
+    template <typename Callback>
+    bool forEachFloatingChildPeerAncestorPeerFromRootToThis (Callback&& callback, bool processThisPointer = true)
+    {
+        Array<ComponentPeer*> peersToProcess; // use Array as a stack because I don't want to have to include <stack>
+
+        { // limit the scope of peer
+            ComponentPeer* peer = (processThisPointer ? this : this->floatingChildPeerParent);
+            while (peer != nullptr)
+            {
+                peersToProcess.add (peer); // push this and all of its ancestors onto the stack
+                peer = peer->floatingChildPeerParent;
+            }
+        }
+
+        while (! peersToProcess.isEmpty()) // then pop each one off the stack and invoke callback on it
+        {
+            auto* peer = peersToProcess.getLast();
+            peersToProcess.removeLast();
+
+            if constexpr (std::is_convertible_v<decltype(callback (peer)), bool>)
+            {
+                if (callback (peer))
+                    return true;
+            }
+            else
+                callback (peer);
+        }
+
+        return false;
+    }
 
     void makeAllAncestorsVisibleAndNotMinimised();
 
@@ -797,12 +840,35 @@ protected:
     ListenerList<VBlankListener> vBlankListeners;
     Style style = Style::automatic;
 
+    /** True if this peer is attached to another window via the nativeWindowToAttachTo parameter of Component::addToDesktop.
+        See the comment on ComponentPeer::addFloatingChildPeer for more details on nativeWindowToAttachTo and its relationship to floating child peers.
+    */
     virtual bool isAttachedToAnotherWindow() = 0;
+
+    /** If this peer is a floating child peer, then this member variable is equal to its parent.
+        I chose this slightly weird named (instead of just "parent"), because some of the ComponentPeer implementation classes (HWNDComponentPeer, etc.)
+        Have a member called something like "parent" that is used to keep track of the value passed into the nativeWindowToAttachTo parameter of Component::addToDesktop.
+        I wanted to make it really clear that this is something different
+    */
     ComponentPeer* floatingChildPeerParent = nullptr;
     Array<ComponentPeer*> floatingChildPeerList;
-    bool internalIsInherentlyAlwaysOnTop = false; // is there an established naming convention for private/protected variables that correspond to public getters?
-    bool internalIsInherentlyMinimised   = false;   // I only see the "internal" prefix used with private/protected member functions, and never with member variables, so sorry if this isn't consistent with JUCE's style
+    bool internalIsInherentlyAlwaysOnTop = false;
+    bool internalIsInherentlyMinimised   = false;
     bool internalIsInherentlyHidden      = false;
+
+    /** Part of a very nasty workaround used in the win32 implementation
+        Basically certain operations on windows can cause a sort of chain reaction of events in the windowProc
+        that will lead to setVisible getting called.
+        This in an issue because setVisible sets the internalIsInherentlyHidden flag,
+        which leads ComponentPeer to think that a window is inherently hidden when it shouldn't be.
+        The hack I came up with is to basically set this flag and check it at the end of setVisible
+        in order to determine if we're currently inside one of these chain reactions.
+        The only other solutions I was able to come up with would have involved rewriting large sections of the windowProc,
+        which obviously would not have been good for anyone
+
+        also NSViewComponentPeer has an insideToFrontCall member variable that's being used for some kind of workaround,
+        so I'm not the only one doing this :P
+    */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
 private:
@@ -833,13 +899,12 @@ private:
     void recursivelyRefreshAlwaysOnTopStatus(bool currentPeerIsAlwaysOnTop = false);
     void doSetAlwaysOnTopFalseWorkaround();
 
-   /**
-     * Used to support ancestrally always on top peers.
-     * An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
-     * So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
-     *
-     * Note to any developers reading this in the future, don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
-     * On every platform I've tested on, "redundant" setAlwaysOnTopWithoutSettingFlag calls were necessary in some circumstances in order to get the correct behavior
+   /** Used to support ancestrally always on top peers.
+       An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
+       So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
+
+       Important note to any juce people reading this in the future: don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
+       On every platform I've tested on, "redundant" setAlwaysOnTopWithoutSettingFlag calls were necessary in some circumstances in order to get the correct behavior
     */
     virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
 

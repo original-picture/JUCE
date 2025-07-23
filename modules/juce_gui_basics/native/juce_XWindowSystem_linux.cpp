@@ -3979,7 +3979,7 @@ void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientM
             }
 
             auto parentOfPeer = peer->getFloatingChildPeerParent();
-            auto& childPeerList = parentOfPeer->getFloatingChildren();
+            auto& childPeerList = parentOfPeer->getFloatingChildPeers();
 
             bool isFront = isFrontWindow ((::Window) peer->getNativeHandle());
 

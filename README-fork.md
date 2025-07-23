@@ -211,6 +211,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] setVisible changes z order on ~~macOS~~ all platforms
     - I don't remember whether it did this before
 - [ ] child windows incorrectly showing on the taskbar on linux
+- [ ] on windows, occasional minor flickering when toggling the always on top status of a parent
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window

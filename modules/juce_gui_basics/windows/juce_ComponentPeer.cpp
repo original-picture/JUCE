@@ -211,7 +211,7 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
 
         return true;
     }
-    
+
     return false;
 }
 
@@ -270,6 +270,16 @@ ComponentPeer* ComponentPeer::getFloatingChildPeer(int index) const noexcept
     return floatingChildPeerList[index];
 }
 
+int ComponentPeer::getIndexOfFloatingChildPeer (const ComponentPeer* child) const noexcept
+{
+    return floatingChildPeerList.indexOf (const_cast<ComponentPeer*> (child));
+}
+
+bool ComponentPeer::addFloatingChildPeer (juce::ComponentPeer* child, int zOrder)
+{
+    return addFloatingChildPeer (*child, zOrder);
+}
+
 bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 {
     jassert(! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
@@ -303,6 +313,15 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
     }
 
     return false;
+}
+
+ComponentPeer* ComponentPeer::findFloatingChildPeerWithID (uint32 targetID) const noexcept
+{
+    for (auto* c : floatingChildPeerList)
+        if (c->uniqueID == targetID)
+            return c;
+
+    return nullptr;
 }
 
 ComponentPeer* ComponentPeer::removeFloatingChildPeer (int childIndexToRemove)
@@ -362,7 +381,7 @@ ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
     return ret;
 }
 
-bool ComponentPeer::isAncestorOf (juce::ComponentPeer* possibleDescendant) const noexcept
+bool ComponentPeer::isAncestorOf (ComponentPeer* possibleDescendant) const noexcept
 {
     while (possibleDescendant != nullptr)
     {
@@ -380,7 +399,7 @@ ComponentPeer* ComponentPeer::getFloatingChildPeerParent() const noexcept
     return floatingChildPeerParent;
 }
 
-void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPeer* other)
+void ComponentPeer::callToBehindInternalAndRearrangeChildList (ComponentPeer* other)
 {
     if (this->isAlwaysOnTop() == other->isAlwaysOnTop())
     {
@@ -398,7 +417,7 @@ void ComponentPeer::callToBehindInternalAndRearrangeChildList (juce::ComponentPe
     }
 }
 
-void ComponentPeer::toBehind (juce::ComponentPeer* other)
+void ComponentPeer::toBehind (ComponentPeer* other)
 {                                                                                       // the macOS implementation of toBehindInternal doesn't do anything if this peer isn't visible, so I need to reflect that behavior here as well
     if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this || ! (this->isShowing()))
         return;
@@ -407,9 +426,7 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
     }
     else
     {
-        ComponentPeer* componentToInsert = this;
-
-        juce::Array<ComponentPeer*> ancestorsOfThisList;
+        Array<ComponentPeer*> ancestorsOfThisList;
         this->forEachFloatingChildPeerAncestorPeerFromThisToRoot ([&](ComponentPeer* peer)
         {
             ancestorsOfThisList.add (peer);
@@ -430,7 +447,7 @@ void ComponentPeer::toBehind (juce::ComponentPeer* other)
             return false;
         });
 
-        jassert (leastCommonAncestorFound); // LCA wasn't found (shouldn't be possible because nullptr is a valid LCA, and all peers technically have nullptr as an ancestor)
+        jassert (leastCommonAncestorFound); // LCA wasn't found (shouldn't be possible because nullptr is a valid LCA, and all peers should have nullptr as an ancestor)
     }
 }
 
