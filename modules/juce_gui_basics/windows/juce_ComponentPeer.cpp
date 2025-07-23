@@ -421,9 +421,8 @@ void ComponentPeer::toBehind (ComponentPeer* other)
 {                                                                                       // the macOS implementation of toBehindInternal doesn't do anything if this peer isn't visible, so I need to reflect that behavior here as well
     if (other->isAncestorOf (this) || this->isAncestorOf (other) || other == this || ! (this->isShowing()))
         return;
-    else if (this->floatingChildPeerParent == other->floatingChildPeerParent) { // if the two peers are actually siblings and not just cousins, we can use this faster path
+    else if (this->floatingChildPeerParent == other->floatingChildPeerParent) // if the two peers are actually siblings and not just cousins, we can use this faster path
         callToBehindInternalAndRearrangeChildList (other);
-    }
     else
     {
         Array<ComponentPeer*> ancestorsOfThisList;
