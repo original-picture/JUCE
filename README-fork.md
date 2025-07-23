@@ -215,6 +215,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [ ] on linux, it's possible for a cousin window to sandwich itself between a parent and a child????????
 - [ ] toBehind just doesn't work on linux??
   - even though all the right stuff seems to get called?
+- [ ] on macOS, clicking a leaf child window doesn't bring the entire hierarchy to the front like it should
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window

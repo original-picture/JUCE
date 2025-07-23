@@ -601,6 +601,8 @@ void ComponentPeer::handleBroughtToFront()
         currentPeerParent->insertIntoFloatingChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
 
         currentPeer = currentPeer->floatingChildPeerParent;
+
+        currentPeerParent->toFront (false);
     }
 
     #ifdef __APPLE__
