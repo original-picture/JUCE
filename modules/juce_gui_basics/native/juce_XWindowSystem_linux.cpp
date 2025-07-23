@@ -3939,11 +3939,6 @@ void XWindowSystem::handleMappingNotify (XMappingEvent& mappingEvent) const
 
 void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientMessageEvent& clientMsg, XEvent& event) const
 {
-    auto stacked = XWindowSystemUtilities::Atoms::getCreating (display, "_NET_RESTACK_WINDOW");
-
-    auto name = X11Symbols::getInstance()->xGetAtomName(display, clientMsg.message_type);
-    auto atomname = X11Symbols::getInstance()->xGetAtomName(display, clientMsg.data.l[0]);
-
     if (clientMsg.message_type == atoms.protocols && clientMsg.format == 32)
     {
         auto atom = (Atom) clientMsg.data.l[0];
