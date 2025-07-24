@@ -603,7 +603,13 @@ void ComponentPeer::handleBroughtToFront()
         currentPeer = currentPeer->floatingChildPeerParent;
 
         currentPeerParent->toFront (false);
+        currentPeerParent->dontGrabFocus = true;
     }
+
+    if (dontGrabFocus)
+        dontGrabFocus = false;
+    else
+        grabFocus();
 
     #ifdef __APPLE__
         // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent
