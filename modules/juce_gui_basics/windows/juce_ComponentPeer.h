@@ -871,8 +871,6 @@ protected:
     */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
-    bool dontGrabFocus = false;
-
 private:
     //==============================================================================
     virtual void appStyleChanged() {}
