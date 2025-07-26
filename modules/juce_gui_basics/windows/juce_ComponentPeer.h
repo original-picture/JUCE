@@ -870,6 +870,7 @@ protected:
         so I'm not the only one doing this :P
     */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    bool skipNextCall = false;
 
 private:
     //==============================================================================

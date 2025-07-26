@@ -588,11 +588,13 @@ void ComponentPeer::dismissPendingTextInput()
 //==============================================================================
 void ComponentPeer::handleBroughtToFront()
 {
+    if (! skipNextCall)
+    {
     component.internalBroughtToFront();
 
     auto currentPeer = this;
 
-    while (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
+    if (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
     {
         auto indexOfCurrentPeerInParentPeerList = currentPeerParent->floatingChildPeerList.indexOf (currentPeer);
         jassert(indexOfCurrentPeerInParentPeerList != -1);
@@ -602,8 +604,28 @@ void ComponentPeer::handleBroughtToFront()
 
         currentPeer = currentPeer->floatingChildPeerParent;
 
-        // currentPeerParent->toFront (false);
+        currentPeer->toFront (false);
     }
+
+
+        auto thisParentCopy = this->floatingChildPeerParent;
+
+        if (thisParentCopy = this->floatingChildPeerParent)
+        {
+            this->clearFloatingChildPeerNativeParent();
+            this->floatingChildPeerParent = nullptr;
+
+            skipNextCall = true;
+            toFront (false);
+
+            this->floatingChildPeerParent = thisParentCopy;
+            this->setFloatingChildPeerNativeParent (floatingChildPeerParent);
+        }
+
+
+    }
+    else
+        skipNextCall = false;
 
 
     #ifdef __APPLE__
