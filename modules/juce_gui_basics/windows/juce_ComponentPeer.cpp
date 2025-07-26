@@ -592,7 +592,7 @@ void ComponentPeer::handleBroughtToFront()
 
     auto currentPeer = this;
 
-    if (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
+    while (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
     {
         auto indexOfCurrentPeerInParentPeerList = currentPeerParent->floatingChildPeerList.indexOf (currentPeer);
         jassert(indexOfCurrentPeerInParentPeerList != -1);
@@ -602,8 +602,9 @@ void ComponentPeer::handleBroughtToFront()
 
         currentPeer = currentPeer->floatingChildPeerParent;
 
-        currentPeerParent->toFront (false);
+        // currentPeerParent->toFront (false);
     }
+
 
     #ifdef __APPLE__
         // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent
