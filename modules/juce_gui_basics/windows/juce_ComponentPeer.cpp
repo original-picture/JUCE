@@ -602,7 +602,7 @@ void ComponentPeer::handleBroughtToFront()
 
         currentPeer = currentPeer->floatingChildPeerParent;
 
-        //currentPeerParent->toFront (false);
+        currentPeerParent->toFront (false);
     }
 
     #ifdef __APPLE__
