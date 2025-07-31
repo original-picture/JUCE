@@ -588,11 +588,11 @@ void ComponentPeer::dismissPendingTextInput()
 //==============================================================================
 void ComponentPeer::handleBroughtToFront()
 {
-    auto topLevelPeer = getTopLevelPeer();
-    if (topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall == nullptr)
-    {
-        topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall = this;
-    }
+    // auto topLevelPeer = getTopLevelPeer();
+    // if (topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall == nullptr)
+    // {
+    //     topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall = this;
+    // }
    // if (skipNextCall) {
    //     --skipNextCall;
    //     return;
@@ -615,8 +615,17 @@ void ComponentPeer::handleBroughtToFront()
 
        // if (! skipNextCall)
       // ++currentPeerParent->skipNextCall;
-       currentPeerParent->toFront (false); // causes crash on windows iirc
+       // currentPeerParent->toFront (false); // causes crash on windows iirc
     }
+
+    if (skipNextCall)
+        skipNextCall = false;
+    else
+        forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer)
+        {
+            peer->skipNextCall = true;
+            peer->toFront (false);
+        }, true);
 
     //if (skipNextCall)
     //    skipNextCall = false;
@@ -626,10 +635,10 @@ void ComponentPeer::handleBroughtToFront()
     //if (floatingChildPeerParent != nullptr)
     //{
     //    this->skipNextCall = true;
-    if (peerThatGeneratedFirstHandleBroughtToFrontCall != nullptr) {
-        peerThatGeneratedFirstHandleBroughtToFrontCall->grabFocus();
-        peerThatGeneratedFirstHandleBroughtToFrontCall = nullptr;
-    }
+    // if (peerThatGeneratedFirstHandleBroughtToFrontCall != nullptr) {
+    //     peerThatGeneratedFirstHandleBroughtToFrontCall->grabFocus();
+    //     peerThatGeneratedFirstHandleBroughtToFrontCall = nullptr;
+    // }
     //}
 
 
