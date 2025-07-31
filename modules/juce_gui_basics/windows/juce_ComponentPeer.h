@@ -179,7 +179,8 @@ public:
     virtual void* getNativeHandle() const = 0;
 
     /** Shows or hides the window. */
-    void setVisible (bool shouldBeVisible);
+    virtual void setVisible (bool shouldBeVisible); // virtual (but not pure virtual) because we need to do something special on windows in addition to calling the base implementation
+                                                    // other platforms just use the base implementation defined in ComponentPeer.cpp
 
     /** Changes the title of the window. */
     virtual void setTitle (const String& title) = 0;
@@ -288,8 +289,8 @@ public:
         Child peers are hidden and not minimised because minimising child windows leads to weird behavior on all platforms.
         Hiding makes them act how you would expect
     */
-    void setMinimised (bool shouldBeMinimised);
-
+    virtual void setMinimised (bool shouldBeMinimised); // virtual (but not pure virtual) because we need to do something special on windows in addition to calling the base implementation
+                                                        // other platforms just use the base implementation defined in ComponentPeer.cpp
     /** Returns true if this peer is minimised.
 
         @see setMinimised
@@ -869,7 +870,8 @@ protected:
 
     /** and similar deal here, but for visibility */
     virtual void setVisibleWithoutSettingFlag (bool shouldBeVisible) = 0;
-    void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
+    virtual void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible); // virtual (but not pure virtual) because we need to do something special on windows in addition to calling the base implementation
+                                                                                 // other platforms just use the base implementation defined in ComponentPeer.cpp
 
 
     virtual void toBehindInternal (ComponentPeer* other) = 0;
@@ -902,21 +904,6 @@ protected:
     bool internalIsInherentlyAlwaysOnTop = false;
     bool internalIsInherentlyMinimised   = false;
     bool internalIsInherentlyHidden      = false;
-
-    /** Part of a very nasty workaround used in the win32 implementation
-        Basically certain operations on windows can cause a sort of chain reaction of events in the windowProc
-        that will lead to setVisible getting called.
-        This in an issue because setVisible sets the internalIsInherentlyHidden flag,
-        which leads ComponentPeer to think that a window is inherently hidden when it shouldn't be.
-        The hack I came up with is to basically set this flag and check it at the end of setVisible
-        in order to determine if we're currently inside one of these chain reactions.
-        The only other solutions I was able to come up with would have involved rewriting large sections of the windowProc,
-        which obviously would not have been good for anyone
-
-        also NSViewComponentPeer has an insideToFrontCall member variable that's being used for some kind of workaround,
-        so I'm not the only one doing this :P
-    */
-    bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
 private:
     //==============================================================================

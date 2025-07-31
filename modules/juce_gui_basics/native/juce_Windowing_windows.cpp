@@ -1703,6 +1703,43 @@ public:
             ShowWindow (hwnd, shouldBeMinimised ? SW_MINIMIZE : SW_RESTORE);
     }
 
+    //==============================================================================
+    void setMinimised (bool shouldBeVisible) override
+    {
+        insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true;
+
+        ComponentPeer::setMinimised (shouldBeVisible); // the core implementation is the same,
+                                                       // we just need to set and unset this flag above and below
+        insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    }
+
+    void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible) override
+    {
+        insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true;
+
+        ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible); // the core implementation is the same,
+                                                                                  // we just need to set and unset this flag above and below
+        insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+    }
+
+    void setVisible (bool shouldBeVisible)
+    {
+        bool internalIsInherentlyHiddenOldValue = internalIsInherentlyHidden; // the base implementation of setVisible will change this value, so store it
+
+        ComponentPeer::setVisible (shouldBeVisible);
+
+        bool anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
+        forEachFloatingChildPeerAncestorPeerFromThisToRoot([&] (ComponentPeer* peer)
+        {
+            auto hwndPeer = dynamic_cast<HWNDComponentPeer*> (peer);
+            anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall || hwndPeer->insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall;
+        });
+
+        if (anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall)
+            internalIsInherentlyHidden = internalIsInherentlyHiddenOldValue; // undo any changes that the base implementation of setVisible made to internalIsInherentlyHidden
+    }
+
+    //==============================================================================
     bool isMinimised() const override
     {
         WINDOWPLACEMENT wp;
@@ -2291,6 +2328,23 @@ private:
     HMONITOR currentMonitor = nullptr;
 
     bool isAccessibilityActive = false;
+
+
+    /** Part of a very nasty workaround
+
+        Basically certain operations can cause a sort of chain reaction of events to occur in the windowProc
+        that will lead to setVisible getting called.
+        This in an issue because setVisible sets the internalIsInherentlyHidden flag,
+        which leads ComponentPeer to think that a window is inherently hidden when it shouldn't be.
+        The hack I came up with is to basically set this flag and check it at the end of setVisible
+        in order to determine if we're currently inside one of these chain reactions.
+        The only other solutions I was able to come up with would have involved rewriting large sections of the windowProc,
+        which obviously would not have been good for anyone
+
+        also NSViewComponentPeer has an insideToFrontCall member variable that's being used for a similar kind of workaround,
+        so I'm not the only one writing code like this :P
+    */
+    bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 
     //==============================================================================
     static MultiTouchMapper<DWORD> currentTouches;
