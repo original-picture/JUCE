@@ -870,7 +870,7 @@ protected:
         so I'm not the only one doing this :P
     */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
-    bool skipNextCall = false; // used in a workaround on linux, see handleBroughtToFront for details
+    bool skipNextToFrontCallInHandleBroughtToFront = false; // used in a workaround on linux, see handleBroughtToFront for details
 
 private:
     //==============================================================================

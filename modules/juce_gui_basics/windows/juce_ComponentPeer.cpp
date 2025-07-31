@@ -207,7 +207,7 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
                                                                               // where it always returns false, so in practice, checking the return value of just one call to setAlwaysOnTopWithoutSettingFlag succeeds is sufficient
                                                                               // though of course all of this could change in the future...
         if(! alwaysOnTop)                                                     // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
-            doSetAlwaysOnTopFalseWorkaround(); // Windows, linux, and macOS all behave weirdly when calling setAlwaysOnTop (false) on a child window. This workaround makes everything work nicely. See the readme for more details
+            doSetAlwaysOnTopFalseWorkaround(); // Windows, linux, and macOS all behave weirdly when calling setAlwaysOnTop (false) on a child window. This workaround makes everything work nicely
 
         return true;
     }
@@ -600,14 +600,18 @@ void ComponentPeer::handleBroughtToFront()
         parentPeer->insertIntoFloatingChildPeerList (this, -1); // -1 means insert at the back of the array
     }
 
-    if (skipNextCall)
-        skipNextCall = false;
+    if (skipNextToFrontCallInHandleBroughtToFront)
+        skipNextToFrontCallInHandleBroughtToFront = false;
     else
         forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer)
         {
-            peer->skipNextCall = true;
-            peer->toFront (false);
-        }, floatingChildPeerParent != nullptr);
+            #ifdef _WIN32
+                peer->skipNextToFrontCallInHandleBroughtToFront = true;
+                peer->handleBroughtToFront();
+            #else
+                 peer->toFront (false);          // this is a necessary workaround on macos and linux, but causes an infinite loop on windows
+            #endif                              // luckily windows actually moves ancestor windows in front of their siblings automatically, so we don't have to do it ourselves,
+        }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
 
     #ifdef __APPLE__
         // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent
@@ -668,8 +672,8 @@ void ComponentPeer::handleMovedOrResized()
     if (! windowInSpecialState)
         lastNonFullscreenBounds = component.getBounds();
 
-    skipNextCall = false; // this is part of a workaround for linux
-}                         // see the body of handleBroughtToFront for details
+    skipNextToFrontCallInHandleBroughtToFront = false; // this is part of a workaround for linux
+}                                                      // see the body of handleBroughtToFront for details
 
 void ComponentPeer::handleFocusGain()
 {
