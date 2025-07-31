@@ -598,20 +598,14 @@ void ComponentPeer::handleBroughtToFront()
         parentPeer->floatingChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
         parentPeer->insertIntoFloatingChildPeerList (this, -1); // -1 means insert at the back of the array
     }
-
-    doHandleBroughtToFrontPlatformSpecificWorkarounds();
-    /*
+    
     if (skipNextToFrontCallInHandleBroughtToFront)
         skipNextToFrontCallInHandleBroughtToFront = false;
     else
         forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer)
         {
-            #ifdef _WIN32
-                peer->skipNextToFrontCallInHandleBroughtToFront = true;
-                peer->handleBroughtToFront();
-            #else
-                 peer->toFront (false);         // this is a necessary workaround on macos and linux, but causes an infinite loop on windows
-            #endif                              // luckily windows actually moves ancestor windows in front of their siblings automatically, so we don't have to do it ourselves,
+            peer->skipNextToFrontCallInHandleBroughtToFront = true;
+            peer->doHandleBroughtToFrontPlatformSpecificWorkarounds();
         }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
 
     #ifdef __APPLE__
@@ -626,7 +620,7 @@ void ComponentPeer::handleBroughtToFront()
             setFloatingChildPeerNativeParent (floatingChildPeerParent);
         }
     #endif
-        */
+
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept

@@ -306,7 +306,7 @@ public:
         }
 
         XWindowSystem::getInstance()->toFront (windowH, makeActive);
-        // handleBroughtToFront();
+        // handleBroughtToFront(); // TODO: explain why you commented this out
     }
 
     void toBehindInternal (ComponentPeer* other) override
@@ -323,6 +323,11 @@ public:
         {
             jassertfalse; // wrong type of window?
         }
+    }
+
+    void doHandleBroughtToFrontPlatformSpecificWorkarounds() override
+    {
+        toFront (false);
     }
 
     bool isFocused() const override
