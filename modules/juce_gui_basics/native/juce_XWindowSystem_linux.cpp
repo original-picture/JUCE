@@ -3987,6 +3987,7 @@ void XWindowSystem::handleClientMessageEvent (LinuxComponentPeer* peer, XClientM
                                           // but the whole thing was bugged in the opposite direction (handleBroughtToFront not getting called when it should) before I modified it,
                                           // so we're really just trading one (potential) bug for another
                                           // let's just keep an eye on it for now and see if it breaks
+            X11Symbols::getInstance()->xSync (display, false);
         }
         else if (atom == atoms.protocolList [XWindowSystemUtilities::Atoms::DELETE_WINDOW])
         {

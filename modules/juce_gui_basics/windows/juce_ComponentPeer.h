@@ -872,6 +872,8 @@ protected:
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
     bool skipNextCall = false;
 
+    ComponentPeer* peerThatGeneratedFirstHandleBroughtToFrontCall = nullptr;
+
 private:
     //==============================================================================
     virtual void appStyleChanged() {}

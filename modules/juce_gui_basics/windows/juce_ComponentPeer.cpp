@@ -588,13 +588,22 @@ void ComponentPeer::dismissPendingTextInput()
 //==============================================================================
 void ComponentPeer::handleBroughtToFront()
 {
-    if (! skipNextCall)
+    auto topLevelPeer = getTopLevelPeer();
+    if (topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall == nullptr)
     {
+        topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall = this;
+    }
+   // if (skipNextCall) {
+   //     --skipNextCall;
+   //     return;
+   // }
+
     component.internalBroughtToFront();
 
     auto currentPeer = this;
 
-    if (auto currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
+    ComponentPeer* currentPeerParent;
+    if (currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
     {
         auto indexOfCurrentPeerInParentPeerList = currentPeerParent->floatingChildPeerList.indexOf (currentPeer);
         jassert(indexOfCurrentPeerInParentPeerList != -1);
@@ -604,29 +613,39 @@ void ComponentPeer::handleBroughtToFront()
 
         currentPeer = currentPeer->floatingChildPeerParent;
 
-        currentPeer->toFront (false);
+       // if (! skipNextCall)
+      // ++currentPeerParent->skipNextCall;
+       currentPeerParent->toFront (false); // causes crash on windows iirc
     }
 
-
-        auto thisParentCopy = this->floatingChildPeerParent;
-
-        if (thisParentCopy = this->floatingChildPeerParent)
-        {
-            this->clearFloatingChildPeerNativeParent();
-            this->floatingChildPeerParent = nullptr;
-
-            skipNextCall = true;
-            toFront (false);
-
-            this->floatingChildPeerParent = thisParentCopy;
-            this->setFloatingChildPeerNativeParent (floatingChildPeerParent);
-        }
-
-
+    //if (skipNextCall)
+    //    skipNextCall = false;
+//
+    //// if (currentPeer != this)
+    //// {
+    //if (floatingChildPeerParent != nullptr)
+    //{
+    //    this->skipNextCall = true;
+    if (peerThatGeneratedFirstHandleBroughtToFrontCall != nullptr) {
+        peerThatGeneratedFirstHandleBroughtToFrontCall->grabFocus();
+        peerThatGeneratedFirstHandleBroughtToFrontCall = nullptr;
     }
-    else
-        skipNextCall = false;
+    //}
 
+
+        //currentPeer->toFront (false);
+
+        //if (auto thisParentCopy = this->floatingChildPeerParent)
+        //{
+            // this->clearFloatingChildPeerNativeParent();
+            // this->floatingChildPeerParent = nullptr;
+
+
+            //thisParentCopy->skipNextCall = true;
+            // this->floatingChildPeerParent = thisParentCopy;
+            // this->setFloatingChildPeerNativeParent (floatingChildPeerParent);
+        //}
+    // }
 
     #ifdef __APPLE__
         // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent

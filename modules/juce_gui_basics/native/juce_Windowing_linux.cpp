@@ -306,7 +306,7 @@ public:
         }
 
         XWindowSystem::getInstance()->toFront (windowH, makeActive);
-        handleBroughtToFront();
+        // handleBroughtToFront();
     }
 
     void toBehindInternal (ComponentPeer* other) override
