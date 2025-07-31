@@ -1883,6 +1883,21 @@ public:
         }
     }
 
+    void doHandleBroughtToFrontPlatformSpecificWorkarounds() override
+    {
+        if (skipNextToFrontCallInHandleBroughtToFront)
+            skipNextToFrontCallInHandleBroughtToFront = false;
+        else
+            forEachFloatingChildPeerAncestorPeerFromRootToThis ([this](ComponentPeer* peer)
+            {
+                auto hwndPeer = dynamic_cast<HWNDComponentPeer*> (floatingChildPeerParent);
+                jassert (hwndPeer != nullptr); // wrong type of window?
+
+                hwndPeer->skipNextToFrontCallInHandleBroughtToFront = true;
+                hwndPeer->handleBroughtToFront();
+            }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
+    }
+
     bool isFocused() const override
     {
         return callFunctionIfNotLocked (&getFocusCallback, nullptr) == (void*) hwnd;

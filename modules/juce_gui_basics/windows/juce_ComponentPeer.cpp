@@ -599,6 +599,8 @@ void ComponentPeer::handleBroughtToFront()
         parentPeer->insertIntoFloatingChildPeerList (this, -1); // -1 means insert at the back of the array
     }
 
+    doHandleBroughtToFrontPlatformSpecificWorkarounds();
+    /*
     if (skipNextToFrontCallInHandleBroughtToFront)
         skipNextToFrontCallInHandleBroughtToFront = false;
     else
@@ -624,6 +626,7 @@ void ComponentPeer::handleBroughtToFront()
             setFloatingChildPeerNativeParent (floatingChildPeerParent);
         }
     #endif
+        */
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept

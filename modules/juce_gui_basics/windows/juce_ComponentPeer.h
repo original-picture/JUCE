@@ -291,7 +291,7 @@ public:
     void setMinimised (bool shouldBeMinimised);
 
     /** Returns true if this peer is minimised.
-      
+
         @see setMinimised
     */
     virtual bool isMinimised() const = 0;
@@ -874,6 +874,8 @@ protected:
 
     virtual void toBehindInternal (ComponentPeer* other) = 0;
     void callToBehindInternalAndRearrangeChildList (ComponentPeer* other);
+
+    virtual void doHandleBroughtToFrontPlatformSpecificWorkarounds() = 0;
 
     Component& component;
     const int styleFlags;
