@@ -779,8 +779,6 @@ bool ComponentPeer::isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor()
 
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
-    // insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true; // Nasty, I know, but this is necessary in order to work around quirks of how windowProc behaves in the windows implementation
-
     if (!shouldBeMinimised)
         makeAllAncestorsVisibleAndNotMinimised();
 
@@ -799,8 +797,6 @@ void ComponentPeer::setMinimised (bool shouldBeMinimised)
 
 
     internalIsInherentlyMinimised = shouldBeMinimised;
-
-    // insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised)
@@ -819,8 +815,6 @@ void ComponentPeer::setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMini
 
 void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible)
 {
-//    insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true;
-
     if (shouldBeVisible)                {
         setVisibleWithoutSettingFlag (true);   // and postorder if we're hiding it.
     }                   // This if statement and the if statement at the end of the function make the traversal preorder if we're showing the window,
@@ -835,8 +829,6 @@ void ComponentPeer::setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisibl
 
     if (! shouldBeVisible)
         setVisibleWithoutSettingFlag (false);
-
-   // insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
 }
 
 bool ComponentPeer::isInherentlyMinimised() const noexcept
@@ -1025,15 +1017,6 @@ void ComponentPeer::setVisible (bool shouldBeVisible)
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 
     internalIsInherentlyHidden = ! shouldBeVisible;
-
-    // bool anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
-    // forEachFloatingChildPeerAncestorPeerFromThisToRoot([&] (ComponentPeer* peer)
-    // {
-    //     anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall || peer->insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall;
-    // });
-//
-    // if (! anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall)
-    //     internalIsInherentlyHidden = ! shouldBeVisible;
 }
 
 bool ComponentPeer::setDocumentEditedStatus (bool)
