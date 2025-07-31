@@ -302,6 +302,13 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
 
+        if (this->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor())
+            child.setVisibleRecursivelyWithoutSettingFlag (false);
+
+        if (this->isInherentlyHiddenOrHasInherentlyHiddenAncestor())
+            child.setVisibleRecursivelyWithoutSettingFlag (false);
+
+
         insertIntoFloatingChildPeerList (&child, zOrder);
 
         child.floatingChildPeerParent = this;
@@ -312,7 +319,7 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
         child.setFloatingChildPeerNativeParent (this);
     }
 
-    return false;
+    return true;
 }
 
 ComponentPeer* ComponentPeer::findFloatingChildPeerWithID (uint32 targetID) const noexcept

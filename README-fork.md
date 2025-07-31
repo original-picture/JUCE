@@ -278,7 +278,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] check if juce is globally keeping track of peer z order (child windows would break any assumptions about z-order juce is making based on, e.g., the order in which windows get focused)
   - it's keeping track of peers globally, but it doesn't look like it cares about z-order, so it's fine
 - [ ] add dummy implementations of all new virtual functions to the android and ios implementations so that the build doesn't fail on those platforms
-- [ ] add more helper functions to ComponentPeer
+- [X] add more helper functions to ComponentPeer
 - [ ] make sure visibility and minimisation status play nicely together
   - it could cause issues if these two states are considered mutually exclusively on some platforms but not on others
 
