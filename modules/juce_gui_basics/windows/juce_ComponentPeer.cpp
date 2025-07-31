@@ -625,7 +625,7 @@ void ComponentPeer::handleBroughtToFront()
         {
             peer->skipNextCall = true;
             peer->toFront (false);
-        }, true);
+        }, /*floatingChildPeerParent != nullptr*/ true);
 
     //if (skipNextCall)
     //    skipNextCall = false;
@@ -677,6 +677,8 @@ void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstra
 
 void ComponentPeer::handleMovedOrResized()
 {
+    skipNextCall = false;
+
     const bool nowMinimised = isMinimised();
 
     if (component.flags.hasHeavyweightPeerFlag && ! nowMinimised)
