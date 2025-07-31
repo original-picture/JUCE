@@ -609,7 +609,7 @@ void ComponentPeer::handleBroughtToFront()
                 peer->skipNextToFrontCallInHandleBroughtToFront = true;
                 peer->handleBroughtToFront();
             #else
-                 peer->toFront (false);          // this is a necessary workaround on macos and linux, but causes an infinite loop on windows
+                 peer->toFront (false);         // this is a necessary workaround on macos and linux, but causes an infinite loop on windows
             #endif                              // luckily windows actually moves ancestor windows in front of their siblings automatically, so we don't have to do it ourselves,
         }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
 
@@ -781,6 +781,10 @@ bool ComponentPeer::hasInherentlyAlwaysOnTopAncestor() const noexcept
         return false;
 }
 
+bool ComponentPeer::isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor()
+{
+    return isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor();
+}
 
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {

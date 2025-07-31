@@ -260,49 +260,59 @@ public:
 
     /** Returns true if this peer is set to always stay in front of other windows on the desktop.
         Equivalent to isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor()
+
         @see setAlwaysOnTop, hasInherentlyAlwaysOnTopAncestor, isInherentlyAlwaysOnTop
     */
     bool isAlwaysOnTop() const noexcept;
 
     /** Returns true if this component is always on top because setAlwaysOnTop(true) was called on it specifically.
         Note that hasInherentlyAlwaysOnTopAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+
         @see setAlwaysOnTop, isAlwaysOnTop, hasInherentlyAlwaysOnTopAncestor
     */
     bool isInherentlyAlwaysOnTop() const noexcept;
 
     /** Returns true if this peer has ancestors that are always on top.
         Note that hasInherentlyAlwaysOnTopAncestor() and isInherentlyAlwaysOnTop() are not mutually exclusive!
+
         @see setAlwaysOnTop, isAlwaysOnTop, isInherentlyAlwaysOnTop
     */
     bool hasInherentlyAlwaysOnTopAncestor() const noexcept;
 
+    /** Returns true if this peer is inherently always on top OR has at least one inherently always on top ancestor. */
     bool isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor();
 
 
-    /** Minimises the window. Child peers will be minimized recursively. */
+    /** Minimises the window. Child peers will be HIDDEN (as if by setVisible (false)) recursively, not minimised!
+
+        Child peers are hidden and not minimised because minimising child windows leads to weird behavior on all platforms.
+        Hiding makes them act how you would expect
+    */
     void setMinimised (bool shouldBeMinimised);
 
     /** Returns true if this peer is minimised.
+      
         @see setMinimised
     */
     virtual bool isMinimised() const = 0;
 
     /** Returns true if this peer is minimised because setMinimised (true) was called on it specifically.
         On some platforms, isMinimised might return true for windows that have a minimised ancestor,
-        so this function can be used to differentiate between inherently and ancestralyl minimised windows
+        so this function can be used to differentiate between inherently and ancestrally minimised windows
     */
     bool isInherentlyMinimised() const noexcept;
 
     /** True if this peer has one or more inherently minimised ancestors. */
     bool hasInherentlyMinimisedAncestor() const noexcept;
 
-    /** Returns true if this peer is inherently minimised OR has at least one inherently minimised ancestor (or ancestors). */
+    /** Returns true if this peer is inherently minimised OR has at least one inherently minimised ancestor. */
     bool isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() const noexcept;
 
 
     /** Returns true if this component is hidden because setHidden (true) was called on it specifically.
         Useful because isShowing doesn't give you enough information about *why* a peer is/isn't showing.
         (a peer being inherently hidden, having an inherently hidden ancestor, and/or having a minimised ancestor can all cause isShowing to return false)
+
         @see setVisible, isShowing, isInherentlyHidden, hasInherentlyHiddenAncestor, isInherentlyHiddenOrHasInherentlyHiddenAncestor
     */
     bool isInherentlyHidden() const noexcept;
@@ -310,8 +320,9 @@ public:
     /** True if this peer has one or more inherently hidden ancestors. */
     bool hasInherentlyHiddenAncestor() const noexcept;
 
-    /** Returns true if this peer is inherently hidden OR has at least one inherently hidden ancestor (or ancestors). */
+    /** Returns true if this peer is inherently hidden OR has at least one inherently hidden ancestor. */
     bool isInherentlyHiddenOrHasInherentlyHiddenAncestor() const noexcept;
+
 
     /** True if the window is being displayed on-screen. */
     virtual bool isShowing() const = 0;
@@ -483,21 +494,39 @@ public:
         without first removing it - doing so will automatically remove it and send out the
         appropriate notifications before the deletion completes.
 
-        @see addFloatingChildPeer, ComponentListener::componentChildrenChanged
+        @see addFloatingChildPeer
     */
     void removeFloatingChildPeer (ComponentPeer* childToRemove);
 
+    /** Removes one of this peer's floating child peers by index.
+
+        This will return a pointer to the peer that was removed, or null if
+        the index was out-of-range.
+
+        Note that removing a child will not delete it! But it's ok to delete a peer
+        without first removing it - doing so will automatically remove it
+
+        @see addFloatingChildPeer
+    */
     ComponentPeer* removeFloatingChildPeer (int childIndexToRemove);
 
+    /** Removes all this peer's floating children.
+        Note that this won't delete them! To do that, use deleteAllChildren() instead.
+    */
     void removeAllFloatingChildren();
 
+    /** Returns the parent peer that this peer is floating in front of.
+
+        Returns null if this peer isn't a floating child peer (meaning it has no parent peer).
+    */
     ComponentPeer* getFloatingChildPeerParent() const noexcept;
 
     /** Returns the ancestor of this peer that has no parent, or this peer, if this peer itself has no parent. */
     ComponentPeer* getTopLevelPeer() noexcept;
 
     /** True if possibleDescendant appears anywhere in this peer's hierarchy.
-         Does not return true if this and possibleDescendant refer to the same peer. */
+        Does not return true if this and possibleDescendant refer to the same peer.
+    */
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
 
     /** Brings the window to the top, optionally also giving it keyboard focus. */
@@ -822,11 +851,26 @@ protected:
 
     void makeAllAncestorsVisibleAndNotMinimised();
 
+    /** Used to support ancestrally always on top peers.
+        An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
+        So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
+
+        Important note to any juce people reading this in the future: don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
+        On every platform I've tested on, "redundant" setAlwaysOnTopWithoutSettingFlag calls were necessary in some circumstances in order to ensure correct behavior
+     */
+    virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
+    void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
+
+    /** and likewise, these functions work similarly to the setAlwaysOnTop ones above,
+        but they relate to setMinimised
+    */
     virtual void setMinimisedWithoutSettingFlag (bool shouldBeMinimised) = 0;
     void setMinimisedRecursivelyWithoutSettingFlag (bool shouldBeMinimised);
 
+    /** and similar deal here, but for visibility */
     virtual void setVisibleWithoutSettingFlag (bool shouldBeVisible) = 0;
     void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible);
+
 
     virtual void toBehindInternal (ComponentPeer* other) = 0;
     void callToBehindInternalAndRearrangeChildList (ComponentPeer* other);
@@ -899,20 +943,6 @@ private:
 
     void recursivelyRefreshAlwaysOnTopStatus(bool currentPeerIsAlwaysOnTop = false);
     void doSetAlwaysOnTopFalseWorkaround();
-
-   /** Used to support ancestrally always on top peers.
-       An ancestrally always on top peer needs to make its native window always on top without changing the value returned by isInherentlyAlwaysOnTop.
-       So we need a way to make the native window always on top without setting internalIsInherentlyAlwaysOnTop.
-
-       Important note to any juce people reading this in the future: don't insert an if (alwaysOnTop != currentAlwaysOnTopState) check into any of the platform specific implementations of this function!
-       On every platform I've tested on, "redundant" setAlwaysOnTopWithoutSettingFlag calls were necessary in some circumstances in order to get the correct behavior
-    */
-    virtual bool setAlwaysOnTopWithoutSettingFlag (bool alwaysOnTop) = 0;
-
-    /**
-     * Calls setAlwaysOnTopWithoutSettingFlag on this and recursively on all child peers.
-    */
-    void setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTop);
 
     void insertIntoFloatingChildPeerList (ComponentPeer* childToBe, int zOrder);
 
