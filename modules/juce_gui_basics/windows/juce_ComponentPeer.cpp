@@ -176,16 +176,16 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
     ++peerFrameNumber;
 }
 
-void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus(bool currentPeerIsAlwaysOnTop)
+void ComponentPeer::recursivelyRefreshAlwaysOnTopStatus (bool currentPeerIsAlwaysOnTop)
 {
     currentPeerIsAlwaysOnTop |= this->isInherentlyAlwaysOnTop(); // since we're traversing the hierarchy from the root, we might as well keep track of the (ancestrally) always on top status ourselves
                                                                  // (as opposed to using isAlwaysOnTop(), which will recursively traverse UP the hierarchy to the root every time
     if (currentPeerIsAlwaysOnTop)               // calling setAlwaysOnTopWithoutSettingFlag(false) is what causes the bug,
-        setAlwaysOnTopWithoutSettingFlag(true); // so it's important that we only call setAlwaysOnTopWithoutSettingFlag(true), otherwise we would be undoing our work
+        setAlwaysOnTopWithoutSettingFlag (true); // so it's important that we only call setAlwaysOnTopWithoutSettingFlag(true), otherwise we would be undoing our work
 
     for (auto* peer : floatingChildPeerList)
     {
-        peer->recursivelyRefreshAlwaysOnTopStatus(currentPeerIsAlwaysOnTop);
+        peer->recursivelyRefreshAlwaysOnTopStatus (currentPeerIsAlwaysOnTop);
     }
 }
 
@@ -206,7 +206,7 @@ bool ComponentPeer::setAlwaysOnTop (bool alwaysOnTop)
         }                                                                     // but the only time setAlwaysOnTopWithoutSettingFlag returns false is on linux,
                                                                               // where it always returns false, so in practice, checking the return value of just one call to setAlwaysOnTopWithoutSettingFlag succeeds is sufficient
                                                                               // though of course all of this could change in the future...
-        if(! alwaysOnTop)                                                     // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
+        if (! alwaysOnTop)                                                     // As of 2025/05/21, I've added support for setAlwaysOnTop on linux, so under the current implementation, setAlwaysOnTop actually always returns true...
             doSetAlwaysOnTopFalseWorkaround(); // Windows, linux, and macOS all behave weirdly when calling setAlwaysOnTop (false) on a child window. This workaround makes everything work nicely
 
         return true;
@@ -219,9 +219,9 @@ void ComponentPeer::setAlwaysOnTopRecursivelyWithoutSettingFlag (bool alwaysOnTo
 {
     setAlwaysOnTopWithoutSettingFlag (alwaysOnTop);
 
-    if(! this->isInherentlyAlwaysOnTop())
+    if (! this->isInherentlyAlwaysOnTop())
     {
-        for(ComponentPeer* peer : floatingChildPeerList)
+        for (ComponentPeer* peer : floatingChildPeerList)
         {
             peer->setAlwaysOnTopRecursivelyWithoutSettingFlag (alwaysOnTop);
         }
@@ -265,7 +265,7 @@ int ComponentPeer::getNumFloatingChildPeers() const noexcept
     return floatingChildPeerList.size();
 }
 
-ComponentPeer* ComponentPeer::getFloatingChildPeer(int index) const noexcept
+ComponentPeer* ComponentPeer::getFloatingChildPeer (int index) const noexcept
 {
     return floatingChildPeerList[index];
 }
@@ -282,8 +282,8 @@ bool ComponentPeer::addFloatingChildPeer (juce::ComponentPeer* child, int zOrder
 
 bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 {
-    jassert(! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
-    jassert(! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert (! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert (! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
 
                                                   // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
                                                   // For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts
@@ -302,7 +302,7 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
             child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
 
-        insertIntoFloatingChildPeerList(&child, zOrder);
+        insertIntoFloatingChildPeerList (&child, zOrder);
 
         child.floatingChildPeerParent = this;
 
@@ -326,11 +326,11 @@ ComponentPeer* ComponentPeer::findFloatingChildPeerWithID (uint32 targetID) cons
 
 ComponentPeer* ComponentPeer::removeFloatingChildPeer (int childIndexToRemove)
 {
-    if (auto* child = floatingChildPeerList [childIndexToRemove])
+    if (auto* child = floatingChildPeerList[childIndexToRemove])
     {
         child->clearFloatingChildPeerNativeParent();
 
-        child->setAlwaysOnTopRecursivelyWithoutSettingFlag(false);
+        child->setAlwaysOnTopRecursivelyWithoutSettingFlag (false);
         child->floatingChildPeerParent = nullptr;
 
         floatingChildPeerList.remove (childIndexToRemove);
@@ -351,7 +351,7 @@ void ComponentPeer::doFloatingChildPeerCleanup()
     removeAllFloatingChildren();
 
     if (floatingChildPeerParent)
-        floatingChildPeerParent->removeFloatingChildPeer(this);
+        floatingChildPeerParent->removeFloatingChildPeer (this);
 }
 
 void ComponentPeer::removeAllFloatingChildren()
@@ -363,13 +363,13 @@ void ComponentPeer::removeAllFloatingChildren()
 void ComponentPeer::makeAllAncestorsVisibleAndNotMinimised()
 {
     forEachFloatingChildPeerAncestorPeerFromRootToThis ([&] (ComponentPeer* peer)
-                                                        {
-                                                            if (! peer->isShowing())
-                                                            {
-                                                                peer->setVisible (true);
-                                                                peer->setMinimised (false);
-                                                            }
-                                                        }, false);
+    {
+        if (! peer->isShowing())
+        {
+            peer->setVisible (true);
+            peer->setMinimised (false);
+        }
+    }, false);
 }
 
 ComponentPeer* ComponentPeer::getTopLevelPeer() noexcept
@@ -409,10 +409,9 @@ void ComponentPeer::callToBehindInternalAndRearrangeChildList (ComponentPeer* ot
 
             peerList.remove (peerList.indexOf (this));
             peerList.insert (peerList.indexOf (other), this);
-
         }
 
-        this->toBehindInternal(other); // it's important that this happens AFTER the above code,
+        this->toBehindInternal (other); // it's important that this happens AFTER the above code,
                                        // because the macOS implementation has to do a workaround that needs to see the parent's child peer list in the updated order
     }
 }
@@ -594,7 +593,7 @@ void ComponentPeer::handleBroughtToFront()
     {
         auto parentPeer = this->floatingChildPeerParent;
         auto indexOfCurrentPeerInParentPeerList = parentPeer->floatingChildPeerList.indexOf (this);
-        jassert(indexOfCurrentPeerInParentPeerList != -1);
+        jassert (indexOfCurrentPeerInParentPeerList != -1);
 
         parentPeer->floatingChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
         parentPeer->insertIntoFloatingChildPeerList (this, -1); // -1 means insert at the back of the array
@@ -775,7 +774,7 @@ bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
 bool ComponentPeer::hasInherentlyAlwaysOnTopAncestor() const noexcept
 {
 
-    if(floatingChildPeerParent != nullptr)
+    if (floatingChildPeerParent != nullptr)
         return floatingChildPeerParent->isAlwaysOnTop(); // indirect recursion
     else
         return false;
@@ -855,7 +854,7 @@ bool ComponentPeer::isInherentlyMinimised() const noexcept
 
 bool ComponentPeer::hasInherentlyMinimisedAncestor() const noexcept
 {
-    if(floatingChildPeerParent != nullptr)
+    if (floatingChildPeerParent != nullptr)
         return floatingChildPeerParent->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor(); // indirect recursion
     else
         return false;
@@ -873,7 +872,7 @@ bool ComponentPeer::isInherentlyHidden() const noexcept
 
 bool ComponentPeer::hasInherentlyHiddenAncestor() const noexcept
 {
-    if(floatingChildPeerParent != nullptr)
+    if (floatingChildPeerParent != nullptr)
         return floatingChildPeerParent->isInherentlyHiddenOrHasInherentlyHiddenAncestor(); // indirect recursion
     else
         return false;

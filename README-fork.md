@@ -259,16 +259,17 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] implement `toFront`
 - [X] have minimisation hide child windows instead of minimising them   
 - [X] an internal `isInherentlyHidden` attribute is necessary
-- [ ] investigate and fix always on top related minimisation bugs on windows
+- [X] investigate and fix always on top related minimisation bugs on windows
 - [X] add recursive hide
   * create some abstraction over the hiding code and minimisation code probably
 - [X] remove automatic skip taskbar code from macOS and linux implementations
   * Note: child windows always skip the taskbar on macOS (I think)
 - [ ] ~~make it illegal to~~ strongly advise people to not minimise a ~~child~~ any window that doesn't show on the taskbar 
 - [ ] finish documentation
+  - [ ] comments
+  - [ ] write the new readme
 - [X] rearrange child peer lists when a window is brought to front
-- [ ] that's it?
-- [ ] remove dead code
+- [X] remove dead code
 - [ ] make sure all the code conforms to JUCE's style guide
 - [X] implement `forEachFloatingChildPeerAncestorPeerFromRootToThis` and use it in `setVisible` and `setMinimised`
 - [X] make sure the minimisation and hidden state of the parent are applied when adding a child peer
