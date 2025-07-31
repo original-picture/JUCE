@@ -916,7 +916,11 @@ protected:
         so I'm not the only one doing this :P
     */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
-    bool skipNextToFrontCallInHandleBroughtToFront = false; // used in a
+    bool skipNextAncestorIterationInHandleBroughtToFront = false; // kind of nasty, I know.
+                                                                  // used in a workaround on all desktop platforms (see the comments in handleBroughtToFront for more details)
+                                                                  // in a nutshell, the code I've written needs to call toFront inside of handleBroughtToFront, which leads to infinite
+                                                                  // this is the only way I could think of doing what I need to do without rewriting a lot of JUCE's windowing code
+                                                                  // (most of the windowProc would have to be completely redone)
 
 private:
     //==============================================================================
@@ -947,6 +951,9 @@ private:
     void doSetAlwaysOnTopFalseWorkaround();
 
     void insertIntoFloatingChildPeerList (ComponentPeer* childToBe, int zOrder);
+
+    // does nothing if this peer has no parent
+    void moveThisPeerToTopOfParentPeerChildList();
 
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse = nullptr;

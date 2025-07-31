@@ -1885,7 +1885,10 @@ public:
 
     void doHandleBroughtToFrontPlatformSpecificWorkarounds() override
     {
-        handleBroughtToFront();
+        if (floatingChildPeerParent != nullptr)
+            floatingChildPeerParent->handleBroughtToFront(); // and then this repeats recursively
+                                     // call handleBroughtToFront instead of toFront
+                                     // because toFront leads to an infinite chain reaction in the windowProc that will crash the program
     }
 
     bool isFocused() const override

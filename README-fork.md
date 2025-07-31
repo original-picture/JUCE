@@ -281,6 +281,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
 - [X] add more helper functions to ComponentPeer
 - [ ] make sure visibility and minimisation status play nicely together
   - it could cause issues if these two states are considered mutually exclusively on some platforms but not on others
+- [ ] make protected functions private if you can
 
 # Anticipated FAQ
 ### But doesn't JUCE already have a system for hierarchically organizing windows? (`nativeWindowToAttachTo` parameter of `Component::addToDesktop`)
