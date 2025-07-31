@@ -612,7 +612,9 @@ void ComponentPeer::handleBroughtToFront()
         forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer)
         {
             peer->skipNextToFrontCallInHandleBroughtToFront = true;
-            peer->doHandleBroughtToFrontPlatformSpecificWorkarounds();
+            peer->doHandleBroughtToFrontPlatformSpecificWorkarounds(); // each platform needs to do its own specific thing here. Windows will call handleBroughtToFront,
+                                                                       // linux will call toFront (because X11 incorrectly forgets to recursively bring a child window's ancestor to the front),
+                                                                       // and macOS will do the same thing as linux plus some macOS specific workarounds
         }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
 }
 
@@ -777,7 +779,8 @@ bool ComponentPeer::isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor()
 
 void ComponentPeer::setMinimised (bool shouldBeMinimised)
 {
-    makeAllAncestorsVisibleAndNotMinimised();
+    if (!shouldBeMinimised)
+        makeAllAncestorsVisibleAndNotMinimised();
 
     insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = true; // Nasty, I know, but this is necessary in order to work around quirks of how windowProc behaves in the windows implementation
 
@@ -1017,7 +1020,8 @@ void ComponentPeer::handleUserClosingWindow()
 
 void ComponentPeer::setVisible (bool shouldBeVisible)
 {
-    makeAllAncestorsVisibleAndNotMinimised();
+    if (shouldBeVisible)
+        makeAllAncestorsVisibleAndNotMinimised();
 
     setVisibleRecursivelyWithoutSettingFlag (shouldBeVisible);
 
