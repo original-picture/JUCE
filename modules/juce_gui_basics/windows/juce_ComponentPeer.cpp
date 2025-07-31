@@ -588,34 +588,16 @@ void ComponentPeer::dismissPendingTextInput()
 //==============================================================================
 void ComponentPeer::handleBroughtToFront()
 {
-    // auto topLevelPeer = getTopLevelPeer();
-    // if (topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall == nullptr)
-    // {
-    //     topLevelPeer->peerThatGeneratedFirstHandleBroughtToFrontCall = this;
-    // }
-   // if (skipNextCall) {
-   //     --skipNextCall;
-   //     return;
-   // }
-
     component.internalBroughtToFront();
 
-    auto currentPeer = this;
-
-    ComponentPeer* currentPeerParent;
-    if (currentPeerParent = currentPeer->floatingChildPeerParent) // recursively move each ancestor of this peer to the top of *its* parent peer's child list (this is necessary)
+    if (floatingChildPeerParent != nullptr)
     {
-        auto indexOfCurrentPeerInParentPeerList = currentPeerParent->floatingChildPeerList.indexOf (currentPeer);
+        auto parentPeer = this->floatingChildPeerParent;
+        auto indexOfCurrentPeerInParentPeerList = parentPeer->floatingChildPeerList.indexOf (this);
         jassert(indexOfCurrentPeerInParentPeerList != -1);
 
-        currentPeerParent->floatingChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
-        currentPeerParent->insertIntoFloatingChildPeerList (currentPeer, -1); // -1 means insert at the back of the array
-
-        currentPeer = currentPeer->floatingChildPeerParent;
-
-       // if (! skipNextCall)
-      // ++currentPeerParent->skipNextCall;
-       // currentPeerParent->toFront (false); // causes crash on windows iirc
+        parentPeer->floatingChildPeerList.remove (indexOfCurrentPeerInParentPeerList);
+        parentPeer->insertIntoFloatingChildPeerList (this, -1); // -1 means insert at the back of the array
     }
 
     if (skipNextCall)
@@ -625,36 +607,7 @@ void ComponentPeer::handleBroughtToFront()
         {
             peer->skipNextCall = true;
             peer->toFront (false);
-        }, /*floatingChildPeerParent != nullptr*/ true);
-
-    //if (skipNextCall)
-    //    skipNextCall = false;
-//
-    //// if (currentPeer != this)
-    //// {
-    //if (floatingChildPeerParent != nullptr)
-    //{
-    //    this->skipNextCall = true;
-    // if (peerThatGeneratedFirstHandleBroughtToFrontCall != nullptr) {
-    //     peerThatGeneratedFirstHandleBroughtToFrontCall->grabFocus();
-    //     peerThatGeneratedFirstHandleBroughtToFrontCall = nullptr;
-    // }
-    //}
-
-
-        //currentPeer->toFront (false);
-
-        //if (auto thisParentCopy = this->floatingChildPeerParent)
-        //{
-            // this->clearFloatingChildPeerNativeParent();
-            // this->floatingChildPeerParent = nullptr;
-
-
-            //thisParentCopy->skipNextCall = true;
-            // this->floatingChildPeerParent = thisParentCopy;
-            // this->setFloatingChildPeerNativeParent (floatingChildPeerParent);
-        //}
-    // }
+        }, floatingChildPeerParent != nullptr);
 
     #ifdef __APPLE__
         // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent
@@ -677,8 +630,6 @@ void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstra
 
 void ComponentPeer::handleMovedOrResized()
 {
-    skipNextCall = false;
-
     const bool nowMinimised = isMinimised();
 
     if (component.flags.hasHeavyweightPeerFlag && ! nowMinimised)
@@ -716,7 +667,9 @@ void ComponentPeer::handleMovedOrResized()
 
     if (! windowInSpecialState)
         lastNonFullscreenBounds = component.getBounds();
-}
+
+    skipNextCall = false; // this is part of a workaround for linux
+}                         // see the body of handleBroughtToFront for details
 
 void ComponentPeer::handleFocusGain()
 {
