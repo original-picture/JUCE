@@ -610,23 +610,7 @@ void ComponentPeer::handleBroughtToFront()
     component.internalBroughtToFront();
 
     moveThisPeerToTopOfParentPeerChildList();
-
     doHandleBroughtToFrontPlatformSpecificWorkarounds();
-    // // this section has two jobs:
-    // // 1.) it calls handleBroughtToFront on all ancestors of this peer so that they all get moved to the front of their respective parents' child peer lists (this happens in the code above)
-    // // 2.) it does platform specific workarounds that make sure everything works
-    // //
-    // // the meat of both of these tasks is in the platform specific implementations of doHandleBroughtToFrontPlatformSpecificWorkarounds()
-    // if (skipNextAncestorIterationInHandleBroughtToFront) // skip the ancestor update because we've already done it, and doing it again would lead to infinite recursion
-    //     skipNextAncestorIterationInHandleBroughtToFront = false;
-    // else // iterate over each ancestor of this peer and do some platform specific workaround, which includes calling toFront or handleBroughtToFront, depending on the platform
-    //     forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer) // it's important that we iterate from root to this.
-    //     {                                                                           // If we iterate this to root, things will break on linux
-    //         peer->skipNextAncestorIterationInHandleBroughtToFront = true;
-    //         peer->doHandleBroughtToFrontPlatformSpecificWorkarounds(); // each platform needs to do its own specific thing here. Windows will call handleBroughtToFront,
-    //                                                                    // linux will call toFront (because X11 incorrectly forgets to recursively bring a child window's ancestor to the front),
-    //                                                                    // and macOS will do the same thing as linux plus some macOS specific workarounds
-    //     }, floatingChildPeerParent != nullptr);
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept
@@ -674,8 +658,13 @@ void ComponentPeer::handleMovedOrResized()
     if (! windowInSpecialState)
         lastNonFullscreenBounds = component.getBounds();
 
-    skipNextAncestorIterationInHandleBroughtToFront = false; // this is part of a workaround for linux
-}                                                            // see the body of handleBroughtToFront for details
+    doMovedOrResizedPlatformSpecificWorkarounds();
+}
+
+void ComponentPeer::doMovedOrResizedPlatformSpecificWorkarounds()
+{
+    // only the linux override does anything at the moment
+}
 
 void ComponentPeer::handleFocusGain()
 {

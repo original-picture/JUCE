@@ -876,6 +876,7 @@ protected:
     void callToBehindInternalAndRearrangeChildList (ComponentPeer* other);
 
     virtual void doHandleBroughtToFrontPlatformSpecificWorkarounds() = 0;
+    virtual void doMovedOrResizedPlatformSpecificWorkarounds();
 
     Component& component;
     const int styleFlags;
@@ -916,11 +917,6 @@ protected:
         so I'm not the only one doing this :P
     */
     bool insideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
-    bool skipNextAncestorIterationInHandleBroughtToFront = false; // kind of nasty, I know.
-                                                                  // used in a workaround on all desktop platforms (see the comments in handleBroughtToFront for more details)
-                                                                  // in a nutshell, the code I've written needs to call toFront inside of handleBroughtToFront, which leads to infinite
-                                                                  // this is the only way I could think of doing what I need to do without rewriting a lot of JUCE's windowing code
-                                                                  // (most of the windowProc would have to be completely redone)
 
 private:
     //==============================================================================

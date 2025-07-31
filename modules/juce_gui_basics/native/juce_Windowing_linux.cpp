@@ -327,7 +327,23 @@ public:
 
     void doHandleBroughtToFrontPlatformSpecificWorkarounds() override
     {
-        toFront (false);
+        if (skipNextAncestorIterationInHandleBroughtToFront) // this avoids indirect recursion infinite loops caused by handleBroughtToFront calling toFront, which then calls handleBroughtToFront, etc. etc.
+            skipNextAncestorIterationInHandleBroughtToFront = false;
+        else // iterate over each ancestor of this peer and do some platform specific workaround, which includes calling toFront or handleBroughtToFront, depending on the platform
+            forEachFloatingChildPeerAncestorPeerFromRootToThis ([](ComponentPeer* peer) // it's important that we iterate from root to this, because on linux, toFront activates the given window, even if makeActive is false
+            {                                                                                    // this means that if we iterated from this to the root, every time the user clicked a window,
+                                                                                                 // it would quickly deactivate and the root window of the hierarchy would steal focus from it
+                auto* linuxPeer = dynamic_cast<LinuxComponentPeer*> (peer);
+                jassert (linuxPeer); // wrong type of window?
+
+                linuxPeer->skipNextAncestorIterationInHandleBroughtToFront = true;
+                linuxPeer->toFront (false);
+            }, floatingChildPeerParent != nullptr); // don't bother iterating at all if this peer has no parent
+    }
+
+    void doMovedOrResizedPlatformSpecificWorkarounds() override
+    {
+        skipNextAncestorIterationInHandleBroughtToFront = false; // unrelated windows can get sandwiched between parent and child peers if we don't do this
     }
 
     bool isFocused() const override
@@ -664,6 +680,9 @@ private:
     double currentScaleFactor = 1.0;
     Array<Component*> glRepaintListeners;
     ScopedWindowAssociation association;
+
+    bool skipNextAncestorIterationInHandleBroughtToFront = false;  // kind of nasty, I know. Used for a workaround.
+                                                                   // see the comments in the implementation of doHandleBroughtToFrontPlatformSpecificWorkarounds for details
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LinuxComponentPeer)
