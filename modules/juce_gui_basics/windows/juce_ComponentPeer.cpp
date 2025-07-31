@@ -607,20 +607,6 @@ void ComponentPeer::handleBroughtToFront()
             peer->skipNextToFrontCallInHandleBroughtToFront = true;
             peer->doHandleBroughtToFrontPlatformSpecificWorkarounds();
         }, floatingChildPeerParent != nullptr); // and can instead just call handleBroughtToFront on each ancestor (so that their child peer lists get rearranged properly)
-
-    #ifdef __APPLE__
-        // this workaround is necessary because, for some reason, at least on my machine, child windows on macOS always stack in the order that they were added to their parent
-        // So the most recently added child window will always sit on top, even if another window has been clicked or had toFront called on it
-        // I'm not sure if this is a bug with NSWindow or if I'm just doing something wrong
-        // If anyone knows why this happens or of a better way to achieve the desired behavior, please let me know
-
-        if (floatingChildPeerParent != nullptr)
-        {
-            clearFloatingChildPeerNativeParent();
-            setFloatingChildPeerNativeParent (floatingChildPeerParent);
-        }
-    #endif
-
 }
 
 void ComponentPeer::setConstrainer (ComponentBoundsConstrainer* const newConstrainer) noexcept
