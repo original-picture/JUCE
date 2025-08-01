@@ -1,5 +1,5 @@
 # Floating child windows (peers)
-This fork adds support for child windows that float on top of their parent on Windows, macOS, and linux
+This fork adds support for child windows that float on top of their parent on Windows, macOS, and linux.
 More technically speaking, it provides an abstraction over win32 owner/owned windows, cocoa child windows, 
 and X11 transient windows (or whatever you call windows that you've called `XSetTransientFor` on)
 
@@ -91,7 +91,7 @@ but I don't want to change the implementation of `isVisible`, just in case exist
 
 ### Workarounds
 This is a list of bugs and quirks in the underlying platform specific APIs that I've had to work around. 
-My hope is that this will be useful to the JUCE maintainers and other developers working on windowing
+My hope is that this will be useful to the JUCE maintainers and/or any other developers working on windowing
 
 
 ### Changes to existing parts of JUCE

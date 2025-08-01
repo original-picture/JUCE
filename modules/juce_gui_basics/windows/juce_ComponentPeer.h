@@ -84,9 +84,7 @@ public:
                                                                            asynchronous Core Graphics drawing operations. Use this if there
                                                                            are issues with regions not being redrawn at the expected time
                                                                            (macOS and iOS only). */
-        windowIsSemiTransparent                         = (1 << 30),  /**< Not intended for public use - makes a window transparent. */
-
-        windowUsesNormalTitlebarWhenSkippingTaskbar      = (1 << 31)   /**< Only used on windows.
+        windowUsesNormalTitlebarWhenSkippingTaskbar      = (1 << 12), /**< Only used on windows.
                                                                            If this flag is used and windowAppearsOnTaskbar is not set, the WS_EX_TOOLWINDOW style will not be used.
                                                                            Instead, WS_EX_APPWINDOW will be omitted, causing the window to skip the taskbar while still having the usual window decorations.
                                                                            Ignored if windowAppearsOnTaskbar is set.
@@ -96,6 +94,7 @@ public:
                                                                            So only use this flag if you have some primary application window that does show on the taskbar,
                                                                            and even in that case, only use this flag for secondary windows that get created after the main window. */
 
+        windowIsSemiTransparent                         = (1 << 30)   /**< Not intended for public use - makes a window transparent. */
     };
 
     /** Represents the window borders around a window component.
