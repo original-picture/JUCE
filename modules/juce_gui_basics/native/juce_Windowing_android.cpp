@@ -1355,7 +1355,7 @@ public:
         return (void*) view.get();
     }
 
-    void setVisible (bool shouldBeVisible) override
+    void setVisibleWithoutSettingFlag (bool shouldBeVisible) override
     {
         GlobalRef localView (view);
 
@@ -1452,7 +1452,7 @@ public:
 
     using ComponentPeer::globalToLocal;
 
-    void setMinimised (bool /*shouldBeMinimised*/) override
+    void setMinimisedWithoutSettingFlag (bool /*shouldBeMinimised*/) override
     {
         // n/a
     }

@@ -94,7 +94,7 @@ public:
                                                                            This is usually not an issue in practice, because windowAppearsOnTaskbar is typically only unset for secondary tool windows,
                                                                            while the main window of the application almost always *does* include windowAppearsOnTaskbar.
                                                                            So only use this flag if you have some primary application window that does show on the taskbar,
-                                                                           and even in that case, only use this flag for secondary windows that get created after the main window */
+                                                                           and even in that case, only use this flag for secondary windows that get created after the main window. */
 
     };
 
@@ -413,7 +413,7 @@ public:
     void handlePaint (LowLevelGraphicsContext& contextToPaintTo);
 
     //==============================================================================
-    /** Returns the number of top level child peers that this peer is a parent of. */
+    /** Returns the number of floating child peers that this peer is a parent of. */
     int getNumFloatingChildPeers() const noexcept;
 
     /** Returns one of this peer's floating child peers, by it index.
@@ -425,7 +425,7 @@ public:
     */
     ComponentPeer* getFloatingChildPeer (int index) const noexcept;
 
-    /** Returns the index of this peer in the list of floating child peers.
+    /** Returns the index of this peer in its parent's list of floating child peers.
 
         A value of 0 means it is first in the list (i.e. behind all other peers). Higher
         values are further towards the front.
@@ -781,10 +781,10 @@ protected:
     void callVBlankListeners (double timestampSec);
 
     /** This is what actually calls the platform specific code (SetWindowLongPtr, XSetTransientFor, addChildWindow) that creates the parent/child window relationship.*/
-    virtual void setFloatingChildPeerNativeParent (ComponentPeer* parent) = 0;
+    virtual bool setFloatingChildPeerNativeParent (ComponentPeer* parent);
 
     /** Undoes a native parent/child relationship created by setFloatingChildPeerNativeParent. */
-    virtual void clearFloatingChildPeerNativeParent() = 0;
+    virtual void clearFloatingChildPeerNativeParent();
 
     /** called in the destructors of derived classes (HWNDComponentPeer and friends)
         we can't call it directly from ~ComponentPeer because we need to remove window from its parent before the platform specific destroy function is called,
@@ -873,11 +873,10 @@ protected:
     virtual void setVisibleRecursivelyWithoutSettingFlag (bool shouldBeVisible); // virtual (but not pure virtual) because we need to do something special on windows in addition to calling the base implementation
                                                                                  // other platforms just use the base implementation defined in ComponentPeer.cpp
 
-
     virtual void toBehindInternal (ComponentPeer* other) = 0;
     void callToBehindInternalAndRearrangeChildList (ComponentPeer* other);
 
-    virtual void doHandleBroughtToFrontPlatformSpecificWorkarounds() = 0;
+    virtual void doHandleBroughtToFrontPlatformSpecificWorkarounds();
     virtual void doMovedOrResizedPlatformSpecificWorkarounds();
 
     Component& component;

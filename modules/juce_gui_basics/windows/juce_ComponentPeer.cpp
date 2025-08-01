@@ -282,25 +282,29 @@ bool ComponentPeer::addFloatingChildPeer (juce::ComponentPeer* child, int zOrder
 
 bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 {
-    jassert (! isAttachedToAnotherWindow());       // You tried to add a top level child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
-    jassert (! child.isAttachedToAnotherWindow()); // You tried to add a top level child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert (! isAttachedToAnotherWindow());       // You tried to add a floating child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
+    jassert (! child.isAttachedToAnotherWindow()); // You tried to add a floating child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
 
-                                                  // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
-                                                  // For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts
-                                                  // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
-                                                  // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
-                                                  // then you probably want the functionality of one of them, but just don't know which one
-                                                  // I would recommend you read up on the underlying OS-specific systems and their behaviors so that you can determine which one is right for your use case
+                                                   // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
+                                                   // For example, specifying nativeWindowToAttachTo creates a win32 *child* window, while addFloatingChildPeer creates a win32 *owned* window. MacOS and linux have analogous concepts
+                                                   // The important thing to know is that these two systems are mutually exclusive. An HWND cannot have a parent AND an owner
+                                                   // If you've ended up in a situation where you've attempted to use these two mutually exclusive systems,
+                                                   // then you probably want the functionality of one of them, but just don't know which one
+                                                   // I would recommend you read up on the underlying OS-specific systems and their behaviors so that you can determine which one is right for your use case
 
     jassert (this != &child); // adding a peer to itself!?
 
     if (child.floatingChildPeerParent != this) // TODO: add actual cycle detection here?
     {
+        if (! child.setFloatingChildPeerNativeParent (this))
+            return false; // if setFloatingChildPeerNativeParent returns false, that means the platform doesn't support floating child windows,
+                          // so just early out and return false to let the caller know
         if (child.floatingChildPeerParent != nullptr)
             child.floatingChildPeerParent->removeFloatingChildPeer (&child);
 
+        // make sure the new child peer inherits all of our heritable traits
         if (this->isAlwaysOnTop() && ! child.isAlwaysOnTop())
-            child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true); // make child ancestrally always on top
+            child.setAlwaysOnTopRecursivelyWithoutSettingFlag (true);
 
         if (this->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor())
             child.setVisibleRecursivelyWithoutSettingFlag (false);
@@ -315,11 +319,9 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 
         if (this->isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() || this->isInherentlyHiddenOrHasInherentlyHiddenAncestor())
             child.setVisibleRecursivelyWithoutSettingFlag (false);
-
-        child.setFloatingChildPeerNativeParent (this);
     }
 
-    return true;
+    return true; // everything went fine, return true
 }
 
 ComponentPeer* ComponentPeer::findFloatingChildPeerWithID (uint32 targetID) const noexcept
@@ -351,6 +353,16 @@ ComponentPeer* ComponentPeer::removeFloatingChildPeer (int childIndexToRemove)
 void ComponentPeer::removeFloatingChildPeer (ComponentPeer* childToRemove)
 {
     removeFloatingChildPeer (floatingChildPeerList.indexOf (childToRemove));
+}
+
+bool ComponentPeer::setFloatingChildPeerNativeParent (ComponentPeer* parent)
+{
+    return false; // do nothing. This is the default implementation used on platforms that don't support floating child windows
+}
+
+void ComponentPeer::clearFloatingChildPeerNativeParent()
+{
+    // do nothing. This is the default implementation used on platforms that don't support floating child windows
 }
 
 void ComponentPeer::doFloatingChildPeerCleanup()
@@ -659,6 +671,12 @@ void ComponentPeer::handleMovedOrResized()
         lastNonFullscreenBounds = component.getBounds();
 
     doMovedOrResizedPlatformSpecificWorkarounds();
+}
+
+void ComponentPeer::doHandleBroughtToFrontPlatformSpecificWorkarounds()
+{
+    // do nothing.
+    // this base implementation will only be used on platforms that don't support floating child peers
 }
 
 void ComponentPeer::doMovedOrResizedPlatformSpecificWorkarounds()

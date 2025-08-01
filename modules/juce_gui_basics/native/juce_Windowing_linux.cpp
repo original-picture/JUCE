@@ -391,7 +391,7 @@ public:
         return XWindowSystem::getInstance()->setAlwaysOnTop(this->windowH, shouldBeAlwaysOnTop);
     }
 
-    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
+    bool setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentX11Peer = dynamic_cast<LinuxComponentPeer*> (parent))
         {
@@ -405,6 +405,8 @@ public:
         {
             jassertfalse; // wrong type of window?
         }
+
+        return true;
     }
 
     void clearFloatingChildPeerNativeParent() override

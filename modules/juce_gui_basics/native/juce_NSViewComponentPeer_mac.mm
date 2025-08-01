@@ -624,7 +624,7 @@ public:
         return true;
     }
 
-    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
+    bool setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentNSViewPeer = dynamic_cast<NSViewComponentPeer*> (parent))
         {
@@ -634,6 +634,8 @@ public:
         {
             jassertfalse; // wrong type of window?
         }
+
+        return true;
     }
 
     virtual void clearFloatingChildPeerNativeParent() override

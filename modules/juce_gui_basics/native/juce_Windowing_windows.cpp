@@ -1725,7 +1725,7 @@ public:
     void setVisible (bool shouldBeVisible)
     {
         bool internalIsInherentlyHiddenOldValue = internalIsInherentlyHidden; // the base implementation of setVisible will change this value, so store it
-
+                                                                              // (I know this is gross, but this is the simplest way of doing this that I can think of)
         ComponentPeer::setVisible (shouldBeVisible);
 
         bool anyAncestorsAreinsideSetMinimisedCallOrSetVisibleRecursivelyWithoutSettingFlagCall = false;
@@ -1854,7 +1854,7 @@ public:
         return true;
     }
 
-    void setFloatingChildPeerNativeParent (ComponentPeer* parent) override
+    bool setFloatingChildPeerNativeParent (ComponentPeer* parent) override
     {
         if (auto* parentHWNDPeer = dynamic_cast<HWNDComponentPeer*> (parent))
         {
@@ -1868,6 +1868,8 @@ public:
         {
             jassertfalse; // wrong type of window?
         }
+
+        return true;
     }
 
     void clearFloatingChildPeerNativeParent() override
