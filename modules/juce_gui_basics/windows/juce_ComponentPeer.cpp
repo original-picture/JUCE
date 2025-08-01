@@ -771,9 +771,9 @@ Rectangle<int> ComponentPeer::getAreaCoveredBy (const Component& subComponent) c
 }
 
 //=============================================================================
-bool ComponentPeer::isAlwaysOnTop() const noexcept {          // short circuit evaluation allows us to avoid calling hasInherentlyAlwaysOnTopAncestor() if we don't have to
-    return isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor();
-}                                       // indirect recursion (hasInherentlyAlwaysOnTopAncestor() can call isAlwaysOnTop())
+bool ComponentPeer::isAlwaysOnTop() const noexcept {
+    return isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor();
+}
 
 
 bool ComponentPeer::isInherentlyAlwaysOnTop() const noexcept
@@ -790,7 +790,7 @@ bool ComponentPeer::hasInherentlyAlwaysOnTopAncestor() const noexcept
         return false;
 }
 
-bool ComponentPeer::isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor()
+bool ComponentPeer::isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor() const
 {
     return isInherentlyAlwaysOnTop() || hasInherentlyAlwaysOnTopAncestor();
 }

@@ -249,7 +249,7 @@ public:
     */
     Rectangle<int> getAreaCoveredBy (const Component& subComponent) const;
 
-
+    //==============================================================================
     /** Sets this window to either be always-on-top or normal.
         Some kinds of window might not be able to do this, so should return false.
         If this peer has any floating children, they will become always on top too,
@@ -280,9 +280,10 @@ public:
     */
     bool hasInherentlyAlwaysOnTopAncestor() const noexcept;
 
-    /** Returns true if this peer is inherently always on top OR has at least one inherently always on top ancestor. */
-    bool isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor();
-
+    /** Returns true if this peer is inherently always on top OR has at least one inherently always on top ancestor.
+        Is the exact same as isAlwaysOnTop(), included to maintain consistency with isInherentlyMinimisedOrHasInherentlyMinimisedAncestor and isInherentlyHiddenOrHasInherentlyHiddenAncestor
+    */
+    bool isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor() const;
 
     /** Minimises the window. Child peers will be HIDDEN (as if by setVisible (false)) recursively, not minimised!
 
@@ -309,7 +310,7 @@ public:
     /** Returns true if this peer is inherently minimised OR has at least one inherently minimised ancestor. */
     bool isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() const noexcept;
 
-
+    //==============================================================================
     /** Returns true if this component is hidden because setHidden (true) was called on it specifically.
         Useful because isShowing doesn't give you enough information about *why* a peer is/isn't showing.
         (a peer being inherently hidden, having an inherently hidden ancestor, and/or having a minimised ancestor can all cause isShowing to return false)
@@ -530,6 +531,7 @@ public:
     */
     bool isAncestorOf (ComponentPeer* possibleDescendant) const noexcept;
 
+    //==============================================================================
     /** Brings the window to the top, optionally also giving it keyboard focus. */
     virtual void toFront (bool takeKeyboardFocus) = 0;
 
