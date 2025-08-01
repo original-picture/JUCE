@@ -87,8 +87,6 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
      and any users calling `getStyleFlags()` should be aware of this
 - [ ] maybe write a utility function for setting `_NET_WM_STATE` atoms in juce_XWindowSystem_linux.cpp
 - [ ] document `windowUsesNormalTitlebarWhenSkippingTaskbar`
- 
-
 
 ## Bugs
 - [x] *indicates a fixed bug*  
@@ -217,7 +215,7 @@ also to be clear, I'm not from JUCE! I'm just the person that made this fork
   - essentially the 
 - [ ] toBehind just doesn't work on linux??
   - even though all the right stuff seems to get called?
-- [ ] on macOS, clicking a leaf child window doesn't bring the entire hierarchy to the front like it should
+- [X] on macOS, clicking a leaf child window doesn't bring the entire hierarchy to the front like it should
 
 # Performance
 - [ ] at least on windows, there is a small but perceptible delay when clicking on a parent window

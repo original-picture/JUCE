@@ -88,5 +88,22 @@ but I don't want to change the implementation of `isVisible`, just in case exist
 
 ## Implementation details
 
+
 ### Workarounds
-Getting all this to work involved a lot of working around bugs in the underlying OS-specific libraries
+This is a list of bugs and quirks in the underlying platform specific APIs that I've had to work around. 
+My hope is that this will be useful to the JUCE maintainers and other developers working on windowing
+
+
+### Changes to existing parts of JUCE
+* edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings",
+  because with the addition of parent/child peers, the usage of that term could be confusing
+* `LinuxComponentPeer::setAlwaysOnTop` actually works now (it used to just return false and do nothing)
+* `LinuxComponentPeer::isShowing` now calls `XGetWindowAttributes` and checks to see if the window in question has its `map_state` is `IsViewable` in addition to checking to see if the window is not minimised
+  (it used to just check if the window was not minimised)
+* added a new member to `ComponentPeer::StyleFlags` `windowUsesNormalTitlebarWhenSkippingTaskbar`
+* changed the circumstances under which `handleBroughtToFront()` is called on linux, 
+  because it wasn't get called when it should have been
+* a few member functions of `ComponentPeer` (`setVisible`, `setAlwaysOnTop`, `setMinimised`, and a few others) that were virtual have been made non-virtual
+  so that they can do additional child peer-related bookkeeping on all platforms. 
+  The core functionality has been moved into protected and private virtual functions that do the same thing as the old functions, just under a different name
+
