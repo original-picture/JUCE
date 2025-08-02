@@ -177,7 +177,12 @@ public:
     */
     virtual void* getNativeHandle() const = 0;
 
-    /** Shows or hides the window. */
+    /** Shows or hides the window.
+
+        If shouldBeVisible is false, then child peers are hidden recursively.
+        It is valid to have an invisible child peer with a visible parent,
+        and toggling the parent from invisible and back to visible will not affect the visibility of the child (it will still be hidden)
+    */
     virtual void setVisible (bool shouldBeVisible); // virtual (but not pure virtual) because we need to do something special on windows in addition to calling the base implementation
                                                     // other platforms just use the base implementation defined in ComponentPeer.cpp
 
@@ -310,7 +315,7 @@ public:
     bool isInherentlyMinimisedOrHasInherentlyMinimisedAncestor() const noexcept;
 
     //==============================================================================
-    /** Returns true if this component is hidden because setHidden (true) was called on it specifically.
+    /** Returns true if this component is hidden because setVisible (true) was called on it specifically.
         Useful because isShowing doesn't give you enough information about *why* a peer is/isn't showing.
         (a peer being inherently hidden, having an inherently hidden ancestor, and/or having a minimised ancestor can all cause isShowing to return false)
 
