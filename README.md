@@ -9,7 +9,7 @@ and X11 transient windows (or whatever you call windows that you've called `XSet
 ### macOS
 ![](fork-demo-macos.gif)
 ### Linux
-![](fork-demo-Linux.gif)  
+![](fork-demo-linux.gif)  
 The demo project shown in these gifs can be found [here](https://github.com/original-picture/juce-child-peers-test-app)
 
 ## API overview
