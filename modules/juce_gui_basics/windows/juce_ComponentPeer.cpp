@@ -275,7 +275,7 @@ int ComponentPeer::getIndexOfFloatingChildPeer (const ComponentPeer* child) cons
     return floatingChildPeerList.indexOf (const_cast<ComponentPeer*> (child));
 }
 
-bool ComponentPeer::addFloatingChildPeer (juce::ComponentPeer* child, int zOrder)
+bool ComponentPeer::addFloatingChildPeer (ComponentPeer* child, int zOrder)
 {
     return addFloatingChildPeer (*child, zOrder);
 }

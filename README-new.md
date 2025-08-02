@@ -1,5 +1,5 @@
 # Floating child windows (peers)
-This fork adds support for child windows that float on top of their parent on Windows, macOS, and linux.
+This fork adds support for child windows that float on top of their parent on Windows, macOS, and linux.  
 More technically speaking, it provides an abstraction over win32 owner/owned windows, cocoa child windows, 
 and X11 transient windows (or whatever you call windows that you've called `XSetTransientFor` on)
 
@@ -25,16 +25,18 @@ macOS and linux have analogous concepts with similar rules.
 > The only thing you really need to know about the relationship between these two systems is that they are mutually exclusive.  
 > So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop, 
 > and don't try to add a peer as a floating child its parent-to-be has already been attached to a parent with addToDesktop.
+> If you do either of these things, a `jassert` will fail
 
 ## Terminology
 I agonized over what to call this system for a long while  
 The main issue was distinguishing my code from the existing `nativeWindowToAttachTo` code.  
-Internal code related to `nativeWindowToAttachTo` uses generic parent/child language, 
+Existing code related to `nativeWindowToAttachTo` uses generic parent/child language, 
 so I use "**floating** child" in all public APIs and documentation. 
 Internally, I use generic parent/child language only if it's unambiguous which system I'm referring to.
-I'll also use the child window/peer nomenclature at a high level even when referring to platform specific behavior.
+I also use the child window/peer nomenclature even when referring to platform specific behavior.
 There's an argument to be made against doing this, because I guess that *could* lead to confusion between win32 child windows and JUCE child peers,
-but I think switching to talking about owner/owned windows whenever I reference Windows specific stuff would be even more confusing to users 
+but I think switching to talking about owner/owned windows whenever I reference Windows specific stuff would be even more confusing to users,
+especially ones that aren't familiar with the Windows API
 
 ## Nitty-gritty behavior details
 ### Visibility, minimisation, and always on top
