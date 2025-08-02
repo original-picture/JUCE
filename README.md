@@ -114,11 +114,6 @@ Actually querying whether a window is always on top is kind of a pain on Linux, 
 I left both functions in just to keep the API consistent. 
 I'm not married to the idea of having both though. If everyone dislikes having two functions that do the same thing, then we can get rid of one
 
-### Workarounds
-This is a list of bugs and quirks in the underlying platform specific APIs that I've had to work around. 
-My hope is that this will be useful to the JUCE maintainers and/or anyone else working on windowing
-// TODO :P
-
 ### Changes to existing parts of JUCE
 * edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings",
   because with the addition of parent/child peers, the usage of that term could be confusing
