@@ -6,10 +6,10 @@ and X11 transient windows (or whatever you call windows that you've called `XSet
 ## Gifs
 ### Windows
 ![](fork-demo-windows.gif)
+### Linux
+![](fork-demo-Linux.gif)
 ### macOS
 ![](fork-demo-macos.gif)
-### Linux
-![](fork-demo-Linux.gif)  
 The demo project shown in these gifs can be found [here](https://github.com/original-picture/juce-child-peers-test-app)
 
 ## API overview
