@@ -1,118 +1,129 @@
-![alt text](https://assets.juce.com/juce/JUCE_banner_github.png "JUCE")
+# Floating child windows
+This fork adds support for child windows that float on top of their parent on Windows, macOS, and linux.  
+## Gifs
+### Windows
+![](fork-demo-windows.gif)
+### macOS
+![](fork-demo-macos.gif)
+### linux
+![](fork-demo-linux.gif)
 
-JUCE is an open-source cross-platform C++ application framework for creating
-desktop and mobile applications, including VST, VST3, AU, AUv3, AAX and LV2
-audio plug-ins and plug-in hosts. JUCE can be easily integrated with existing
-projects via CMake, or can be used as a project generation tool via the
-[Projucer](#the-projucer), which supports exporting projects for Xcode (macOS
-and iOS), Visual Studio, Android Studio, and Linux Makefiles as well as
-containing a source code editor.
+More technically speaking, it provides an abstraction over win32 owner/owned windows, cocoa child windows, 
+and X11 transient windows (or whatever you call windows that you've called `XSetTransientFor` on)
 
-## Getting Started
+## API overview
+The main function of interest is `ComponentPeer::addFloatingChildPeer (ComponentPeer* child, int zOrder = -1);`  
+Calling this on a `ComponentPeer` will make `child` always float above it  
+There are also several utility functions like `ComponentPeer* ComponentPeer::getFloatingChildPeerParent()` for querying information about parent/child peers  
+I've tried to make the API similar to the child *component* API so that it's familiar to users
 
-The JUCE repository contains a
-[master](https://github.com/juce-framework/JUCE/tree/master) and
-[develop](https://github.com/juce-framework/JUCE/tree/develop) branch. The
-develop branch contains the latest bug fixes and features and is periodically
-merged into the master branch in stable [tagged
-releases](https://github.com/juce-framework/JUCE/releases) (the latest release
-containing pre-built binaries can be also downloaded from the [JUCE
-website](https://juce.com/get-juce)).
+> [!NOTE]
+> floating child windows will still appear on the taskbar if they are created with the `windowAppearsOnTaskbar` style flag  
+> Omit this style flag from the return value of `getDesktopWindowStyleFlags()` in your Component if you want the 
 
-JUCE projects can be managed with either the Projucer (JUCE's own
-project-configuration tool) or with CMake.
 
-### The Projucer
+## Does this have anything to do with the `nativeWindowToAttachTo` parameter of `Component::addToDesktop`?
+Kind of!  
+Long story short, `nativeWindowToAttachTo` and `addFloatingChildPeer` map to different systems of the underlying OS-specific APIs.
+For example, specifying `nativeWindowToAttachTo` creates a win32 *child* window, while `addFloatingChildPeer` creates a win32 *owned* window. 
+In win32, a *child* window is a window that draws *inside* another window, while an *owned* window is a window that draws *on top* of another window. 
+macOS and linux have analogous concepts with similar rules.
 
-The repository doesn't contain a pre-built Projucer so you will need to build it
-for your platform - Xcode, Visual Studio and Linux Makefile projects are located
-in [extras/Projucer/Builds](/extras/Projucer/Builds) (the minimum system
-requirements are listed in the [minimum system
-requirements](#minimum-system-requirements) section below). The Projucer can
-then be used to create new JUCE projects, view tutorials and run examples. It is
-also possible to include the JUCE modules source code in an existing project
-directly, or build them into a static or dynamic library which can be linked
-into a project.
+> [!IMPORTANT]
+> The only thing you really need to know about the relationship between these two systems is that they are mutually exclusive  
+> So don't try to add a peer as floating child if it's already been added attached to a parent with addToDesktop, 
+> and don't try to add a peer as a floating child its parent-to-be has already been attached to a parent with addToDesktop.
+> If you do either of these things, a `jassert` will fail
 
-For further help getting started, please refer to the JUCE
-[documentation](https://juce.com/learn/documentation) and
-[tutorials](https://juce.com/learn/tutorials).
+## Terminology
+Existing code related to `nativeWindowToAttachTo` uses generic parent/child language, 
+so I use "**floating** child" in all public APIs and documentation. 
+Internally, I use generic parent/child language only if it's unambiguous which system I'm referring to.
+I also use the child window/peer nomenclature even when referring to platform specific behavior.
+There's an argument to be made against doing this, because I guess that *could* lead to confusion between win32 child windows and JUCE child peers,
+but I think switching to talking about owner/owned windows whenever I reference Windows specific stuff would be even more confusing to most readers,
+especially ones that aren't familiar with the Windows API  
+I also use the terms "peer" and "window" somewhat interchangeably, 
+but I tend to use "peer" more when referring to actual C++ `ComponentPeer` objects, 
+and "window" when referring to the actual windows on the desktop. 
 
-### CMake
 
-Version 3.22 or higher is required. To use CMake, you will need to install it,
-either from your system package manager or from the [official download
-page](https://cmake.org/download/). For comprehensive documentation on JUCE's
-CMake API, see the [JUCE CMake documentation](/docs/CMake%20API.md). For
-examples which may be useful as starting points for new CMake projects, see the
-[CMake examples directory](/examples/CMake).
+## Nitty-gritty behavior details
+### Visibility, minimisation, and always on top
+#### Visibility
+I've tried my best to make child peers play nicely with visibility, minimisation, and always on top status.
+Hopefully it will all "just work", and you won't have to think about any of this, 
+but in case you do need to actually understand how all of these systems interact, here are the rules:  
+The visibility of a parent window is inherited by its children. So if you make a parent window invisible, its children are made invisible too.
+This applies recursively, so grandchildren and beyond are made visible as well.
+If you want to differentiate between a window that is invisible because `setVisible (false)` was called on *it specifically*
+and a window that is invisible because one of its parents is invisible, you can use `isInherentlyHidden()`, `hasInherentlyHiddenAncestor()`, and related functions
 
-#### Building Examples
+If you make a child window invisible, then make its parent invisible, and then make the parent visible again, the child will remain invisible.
+JUCE will "remember" the visibility status of child windows.  
 
-To use CMake to build the examples and extras bundled with JUCE, simply clone
-JUCE and then run the following commands, replacing "DemoRunner" with the name
-of the target you wish to build.
+#### Always on top
+always on top status follows pretty much the exact same rules.
 
-    cd /path/to/JUCE
-    cmake . -B cmake-build -DJUCE_BUILD_EXAMPLES=ON -DJUCE_BUILD_EXTRAS=ON
-    cmake --build cmake-build --target DemoRunner
+#### Minimisation
+Minimisation appears to work very similarly to visibility, but there is one big difference: 
+when a parent windows is minimised, its children are *hidden* **not** minimised.
+This is because recursively minimising windows doesn't actually do what you would expect on any of the platforms I tested  
+On windows, minimising a child (owned) window works normally if the child window shows on the taskbar, but does very weird things if it doesn't
+(it sometimes gets spat out into the bottom left corner of the screen as a little title bar).  
+On macOS, miniaturisation works differently than minimisation on windows and most linux desktop environments.
+When you miniaturise a window, it gets sent to a separate icon on the dock.
+Because of this behavior, recursively minimising child windows on macOS would cause every window in the hierarchy to get spit onto the dock, 
+which is clearly not desirable behavior.  
+And on linux (or, at least with GNOME), you can't even minimise a window that doesn't show on the taskbar,
+so recursive minimisation is completely off the table there.  
+Recursively hiding children, on the other hand, works pretty much exactly how you would expect. 
 
-## Minimum System Requirements
+> [!IMPORTANT]
+> As a side note, I would strongly recommend against minimising child windows. 
+> I haven't done any testing to make sure the behavior makes sense, and that's simply because minimisable child windows lead to a weird user experience.
+> Just look at a child window in any program on your computer. Chances are it doesn't have a minimise button.  
+> I recommend you follow this pattern and omit the minimise button from your child windows
 
-#### Building JUCE Projects
+#### IsInherently[Hidden|AlwaysOnTop|Minimised], hasInherently[Hidden|AlwaysOnTop|Minimised]Ancestor, and is[Hidden|AlwaysOnTop|Minimised]
+Every function in one of these families works pretty much the same (with one major exception), 
+but you might be wondering why the `is[Hidden|AlwaysOnTop|Minimised]` and `isInherently[Hidden|AlwaysOnTop|Minimised]OrHasInherentlyis[Hidden|AlwaysOnTop|Minimised]Ancestor`
+families of functions both exist, even though they seemingly do the same thing. 
+The only difference is that `isMinimised` and `isVisible` actually query the underlying window manager (win32, X11, etc.), 
+whereas `isInherentlyMinimisedOrHasInherentlyMinimisedAncestor` and friends just recursively check the flags of the given peer and its ancestors. 
+It's important to distinguish between these two behaviors when talking about minimisation in particular, because, as stated previously, 
+when a parent window is minimised, its children are recursively hidden, not minimised. So if you're trying to figure out if a window is "not showing" 
+(I'm intentionally avoiding the words "hidden" and "visible") because it or one of its ancestors was minimised, then `isInherentlyMinimisedOrHasInherentlyMinimisedAncestor` will give you the answer you want,
+whereas `isMinimised` may or may not do the same (depending on what state the platform's window manager likes to put the children of minimised windows in).  
+`isVisible` and  `! isInherentlyHiddenOrHasInherentlyHiddenAncestor` probably return the same value 99% of the time, 
+but I'm sure there are weird, platform-specific edge cases that would cause `isVisible` to return an incorrect value, 
+and I'm sure there is code out there that depends on that incorrect behavior, so to be safe I'm going to leave both versions in  
+And finally, `isAlwaysOnTop` and `isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor` do the exact same thing. 
+This is the major exception I referred to earlier  
+`isAlwaysOnTop` didn't exist before, so I had to write it myself.
+Actually querying whether a window is always on top is kind of a pain on linux, so I just made `isAlwaysOnTop` call `isInherentlyAlwaysOnTopOrHasInherentlyAlwaysOnTopAncestor` instead :P  
+I left both functions in just to keep the API consistent. 
+I'm not married to the idea of having both though. If everyone dislikes having two functions that do the same thing, then we can get rid of one
 
-- __C++ Standard__: 17
-- __macOS/iOS__: Xcode 12.4 (Intel macOS 10.15.4, Apple Silicon macOS 11.0)
-- __Windows__: Visual Studio 2019 (Windows 10)
-- __Linux__: g++ 7.0 or Clang 6.0 (for a full list of dependencies, see
-[here](/docs/Linux%20Dependencies.md)).
-- __Android__: Android Studio (NDK 26) on Windows, macOS or Linux
+## Implementation details
+I was gonna write something here but I forgot
 
-#### Deployment Targets
+### Workarounds
+This is a list of bugs and quirks in the underlying platform specific APIs that I've had to work around. 
+My hope is that this will be useful to the JUCE maintainers and/or anyone else working on windowing
+// TODO :P
 
-- __macOS__: macOS 10.11 (x86_64, Arm64)
-- __Windows__: Windows 10 (x86_64, x86, Arm64, Arm64EC)
-- __Linux__: Mainstream Linux distributions (x86_64, Arm64/aarch64, (32 bit Arm systems like armv7 should work but are not regularly tested))
-- __iOS__: iOS 12 (Arm64, Arm64e, x86_64 (Simulator))
-- __Android__: Android 7 - Nougat (API Level 24) (arm64-v8a, armeabi-v7a, x86_64, x86)
-
-## Contributing
-
-Please see our [contribution guidelines](.github/contributing.md).
-
-## Licensing
-
-See [LICENSE.md](LICENSE.md) for licensing and dependency information.
-
-## AAX Plug-Ins
-
-AAX plug-ins need to be digitally signed using PACE Anti-Piracy's signing tools
-before they will run in commercially available versions of Pro Tools. These
-tools are provided free of charge by Avid. Before obtaining the signing tools,
-you will need to use a special build of Pro Tools, called Pro Tools Developer,
-to test your unsigned plug-ins. The steps to obtain Pro Tools Developer are:
-
-1. Sign up as an AAX Developer [here](https://developer.avid.com/aax/).
-2. Request a Pro Tools Developer Bundle activation code by sending an email to
-   [devauth@avid.com](mailto:devauth@avid.com).
-3. Download the latest Pro Tools Developer build from your Avid Developer
-   account.
-
-When your plug-ins have been tested and debugged in Pro Tools Developer, and you
-are ready to digitally sign them, please send an email to
-[audiosdk@avid.com](mailto:audiosdk@avid.com) with the subject "PACE Eden
-Signing Tools Request". You need to include an overview of each plug-in along
-with a screen recording showing the plug-in running in Pro Tools Developer, with
-audio if possible.
-
-Please also include the following information:
-
-- Company name
-- Admin full name
-- Telephone number
-
-Once the request is submitted, PACE Anti-Piracy will contact you directly with
-information about signing your plug-ins. When the plug-ins have been signed, you
-are free to sell and distribute them. If you are interested in selling your
-plug-ins on the Avid Marketplace, please send an email to
-[audiosdk@avid.com](mailto:audiosdk@avid.com).
+### Changes to existing parts of JUCE
+* edited the comment of `ComponentPeer::setAlwaysOnTop` to remove language that referred to "siblings",
+  because with the addition of parent/child peers, the usage of that term could be confusing
+* Implemented `LinuxComponentPeer::setAlwaysOnTop` (it used to just return false and do nothing)
+* `LinuxComponentPeer::isShowing` now calls `XGetWindowAttributes` and checks to see if the window in question has its `map_state` is `IsViewable` in addition to checking to see if the window is not minimised
+  (it used to just check if the window was not minimised, which was not correct)
+* added a new member to `ComponentPeer::StyleFlags` `windowUsesNormalTitlebarWhenSkippingTaskbar`
+  * see the comment on this member for more details
+* changed the circumstances under which `handleBroughtToFront()` is called on linux, 
+  because it wasn't getting called when it should have been
+* a few member functions of `ComponentPeer` (`setVisible`, `setAlwaysOnTop`, `setMinimised`, and a few others) that were virtual have been made non-virtual
+  so that they can do additional child peer-related bookkeeping on all platforms. 
+  The core functionality has been moved into protected and private virtual functions that do the same thing as the old functions, just under a different name
+* I've edited the documentation of several of `ComponentPeer`'s member functions and added desci
