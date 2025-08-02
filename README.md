@@ -133,3 +133,6 @@ My hope is that this will be useful to the JUCE maintainers and/or anyone else w
   so that they can do additional child peer-related bookkeeping on all platforms. 
   The core functionality has been moved into protected and private virtual functions that do the same thing as the old functions, just under a different name
 * I've added to the documentation comments of several of `ComponentPeer`'s member functions in order to document how they interact with parent/child peers
+
+### Implementation notes
+I've tried my best to follow JUCE's style guide, though I'm sure I've messed up somewhere...
