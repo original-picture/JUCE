@@ -282,7 +282,6 @@ bool ComponentPeer::addFloatingChildPeer (ComponentPeer* child, int zOrder)
 
 bool ComponentPeer::addFloatingChildPeer (ComponentPeer& child, int zOrder)
 {
-    jassert (! isAttachedToAnotherWindow());       // You tried to add a floating child to this peer when this peer is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
     jassert (! child.isAttachedToAnotherWindow()); // You tried to add a floating child to this peer when the child-to-be is already attached to another window (using the nativeWindowToAttachTo parameter of Component::addToDesktop)
 
                                                    // Long story short, nativeWindowToAttachTo and addFloatingChildPeer map to different systems of the underlying OS-specific APIs
