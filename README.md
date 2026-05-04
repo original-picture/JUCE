@@ -54,7 +54,6 @@ and "window" when referring to the actual windows on the desktop.
 
 ## Nitty-gritty behavior details
 ### Visibility, minimisation, and always on top
-#### Visibility
 I've tried my best to make child peers play nicely with visibility, minimisation, and always on top status.
 Hopefully it will all "just work", and you won't have to think about any of this, 
 but in case you do need to actually understand how all of these systems interact, here are the rules:  
@@ -63,6 +62,7 @@ This applies recursively, so grandchildren and beyond are made visible as well.
 If you want to differentiate between a window that is invisible because `setVisible (false)` was called on *it specifically*
 and a window that is invisible because one of its parents is invisible, you can use `isInherentlyHidden()`, `hasInherentlyHiddenAncestor()`, and related functions (more on these below)
 
+#### Visibility
 If you make a child window invisible, then make its parent invisible, and then make the parent visible again, the child will remain invisible.
 JUCE will "remember" the visibility status of child windows.  
 
